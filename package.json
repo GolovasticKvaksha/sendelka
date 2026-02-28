@@ -1,0 +1,15 @@
+{
+  "name": "sendelka",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "vercel": "^50.25.4"
+  }
+}

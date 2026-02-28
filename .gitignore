@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+vercel-log.txt
+logs/
+*.log
+dist/
+build/
+.vscode/
+.idea/
+*.swp
+*.swo
+temp/
+tmp/
+.vercel
+.env*.local

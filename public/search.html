@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Поиск | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Поиск пользователей</h1>
+            <div class="nav-menu">
+                <a href="lenta.html" class="btn">Лента</a>
+                <a href="profile.html" class="btn">Мой профиль</a>
+                <button id="logoutBtn" class="btn">Выйти</button>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Введите точный username..." autocomplete="off">
+            <button id="searchBtn" class="btn">Найти</button>
+        </div>
+
+        <div id="result" class="search-result"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        if (!token) {
+            location.href = '/login.html'
+        }
+
+        const searchInput = document.getElementById('searchInput')
+        const searchBtn = document.getElementById('searchBtn')
+        const resultDiv = document.getElementById('result')
+
+        async function searchUser() {
+            const username = searchInput.value.trim()
+            
+            if (!username) {
+                resultDiv.innerHTML = '<p class="error">Введите username</p>'
+                return
+            }
+
+            resultDiv.innerHTML = '<p>Ищем...</p>'
+
+            const res = await fetch(`/api/search?username=${encodeURIComponent(username)}`)
+            
+            if (res.status === 404) {
+                resultDiv.innerHTML = '<p class="error">Пользователь не найден</p>'
+                return
+            }
+
+            if (!res.ok) {
+                resultDiv.innerHTML = '<p class="error">Ошибка поиска</p>'
+                return
+            }
+
+            const foundUser = await res.json()
+
+            resultDiv.innerHTML = `
+                <div class="user-card">
+                    <h3>@${foundUser.username}</h3>
+                    <div class="user-stats">
+                        <span>📝 ${foundUser.posts_count || 0} постов</span>
+                        <span>👥 ${foundUser.subscribers_count || 0} подписчиков</span>
+                        <span>❤️ ${foundUser.total_likes_received || 0} лайков</span>
+                    </div>
+                    <p>На сайте с: ${new Date(foundUser.created_at).toLocaleDateString()}</p>
+                    <a href="profile.html?username=${foundUser.username}" class="btn">Перейти в профиль</a>
+                </div>
+            `
+        }
+
+        searchBtn.onclick = searchUser
+        searchInput.onkeypress = (e) => {
+            if (e.key === 'Enter') searchUser()
+        }
+
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.clear()
+            location.href = '/'
+        }
+    </script>
+</body>
+</html>

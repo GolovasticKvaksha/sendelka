@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Лента | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Лента</h1>
+            <div class="nav-menu">
+                <a href="create.html" class="btn">Новый пост</a>
+                <a href="profile.html" class="btn">Мой профиль</a>
+                <a href="search.html" class="btn">Поиск</a>
+                <button id="logoutBtn" class="btn">Выйти</button>
+            </div>
+        </div>
+
+        <div id="notificationsBell" class="notifications-bell" style="cursor: pointer;">
+            <span id="notificationsCount" class="notifications-count">0</span>
+            🔔
+        </div>
+
+        <div class="feed-filter">
+            <button id="filterAll" class="filter-btn active">Все посты</button>
+            <button id="filterSubs" class="filter-btn">Мои подписки</button>
+        </div>
+
+        <div id="posts" class="posts"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        if (!token) {
+            location.href = '/login.html'
+        }
+
+        let currentFilter = 'all'
+
+        async function loadPosts() {
+            const res = await fetch(`/api/posts?userId=${user.id}&filter=${currentFilter}`)
+            const posts = await res.json()
+            
+            const postsDiv = document.getElementById('posts')
+            
+            if (posts.length === 0) {
+                if (currentFilter === 'subscriptions') {
+                    postsDiv.innerHTML = '<p>Ты пока ни на кого не подписан. <a href="search.html">Найти людей</a></p>'
+                } else {
+                    postsDiv.innerHTML = '<p>Пока нет постов</p>'
+                }
+                return
+            }
+            
+            postsDiv.innerHTML = posts.map(post => `
+				<div class="post" data-post-id="${post.id}">
+					<div class="post-header">
+						<a href="profile.html?username=${post.users?.username}" class="post-author">
+							<strong>@${post.users?.username}</strong>
+							${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+						</a>
+						<small>${new Date(post.created_at).toLocaleString()}</small>
+						${user.is_admin ? `
+							<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост (админ)">🗑️</button>
+						` : ''}
+				</div>
+				<div class="post-content">${post.content}</div>
+				<div class="post-actions">
+					<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+						❤️ <span class="likes-count">${post.likes_count || 0}</span>
+					</button>
+					<span class="views-count">👁️ ${post.views_count || 0}</span>
+				</div>
+			</div>
+            `).join('')
+
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', likePost)
+            })
+			document.querySelectorAll('.delete-post-btn').forEach(btn => {
+				btn.addEventListener('click', async (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					
+					if (!confirm('Удалить этот пост?')) return
+					
+					const postId = btn.dataset.postId
+					const postElement = btn.closest('.post')
+					
+					try {
+						const res = await fetch(`/api/posts/delete?postId=${postId}`, {
+							method: 'DELETE',
+							headers: {
+								'Authorization': `Bearer ${token}`
+							}
+						})
+						
+						if (res.ok) {
+							postElement.remove()
+							alert('Пост удалён')
+						} else {
+							const data = await res.json()
+							alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+						}
+					} catch (err) {
+						alert('Ошибка соединения')
+					}
+				})
+			})
+    // ========== КОНЕЦ ВСТАВКИ ==========
+        }
+
+        async function likePost(e) {
+            const btn = e.currentTarget
+            const postId = btn.dataset.postId
+            const likesSpan = btn.querySelector('.likes-count')
+            
+            const res = await fetch(`/api/posts/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (res.ok) {
+                const data = await res.json()
+                btn.classList.toggle('liked', data.liked)
+                likesSpan.textContent = parseInt(likesSpan.textContent) + (data.liked ? 1 : -1)
+                loadNotificationsCount()
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                const res = await fetch('/api/notifications/count', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                
+                if (res.ok) {
+                    const data = await res.json()
+                    const countSpan = document.getElementById('notificationsCount')
+                    if (data.count > 0) {
+                        countSpan.textContent = data.count
+                        countSpan.style.display = 'inline'
+                    } else {
+                        countSpan.style.display = 'none'
+                    }
+                }
+            } catch (err) {
+                console.log('Ошибка загрузки уведомлений:', err)
+            }
+        }
+
+        document.getElementById('filterAll').onclick = () => {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
+            document.getElementById('filterAll').classList.add('active')
+            currentFilter = 'all'
+            loadPosts()
+        }
+
+        document.getElementById('filterSubs').onclick = () => {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
+            document.getElementById('filterSubs').classList.add('active')
+            currentFilter = 'subscriptions'
+            loadPosts()
+        }
+
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.clear()
+            location.href = '/'
+        }
+
+        document.getElementById('notificationsBell').onclick = () => {
+            location.href = '/notifications.html'
+        }
+
+        loadPosts()
+        loadNotificationsCount()
+        setInterval(loadNotificationsCount, 30000)
+    </script>
+</body>
+</html>

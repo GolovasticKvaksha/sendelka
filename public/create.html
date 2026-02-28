@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Новый пост | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Создать пост</h1>
+            <div class="nav-menu">
+                <a href="lenta.html" class="btn">Лента</a>
+                <a href="profile.html" class="btn">Профиль</a>
+                <a href="search.html" class="btn">Поиск</a>
+                <button id="logoutBtn" class="btn">Выйти</button>
+            </div>
+        </div>
+
+        <form id="postForm">
+            <div class="textarea-wrapper">
+                <textarea 
+                    id="content" 
+                    placeholder="Что хочешь написать? (максимум 600 символов)" 
+                    rows="6" 
+                    required
+                    class="post-input"
+                    maxlength="600"
+                ></textarea>
+                <div id="charCounter" class="char-counter">
+                    <span id="currentChars">0</span>/600
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">Опубликовать</button>
+                <a href="lenta.html" class="btn">Отмена</a>
+            </div>
+        </form>
+
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        if (!token) {
+            location.href = '/login.html'
+        }
+
+        const postForm = document.getElementById('postForm')
+        const contentInput = document.getElementById('content')
+        const charCounter = document.getElementById('currentChars')
+        const errorDiv = document.getElementById('error')
+        const successDiv = document.getElementById('success')
+        const submitBtn = document.getElementById('submitBtn')
+
+        contentInput.addEventListener('input', () => {
+            const length = contentInput.value.length
+            charCounter.textContent = length
+            
+            const counter = document.getElementById('charCounter')
+            if (length > 550) {
+                counter.style.color = '#ff4444'
+            } else if (length > 500) {
+                counter.style.color = '#ff8800'
+            } else {
+                counter.style.color = '#666'
+            }
+        })
+
+        postForm.onsubmit = async (e) => {
+            e.preventDefault()
+            
+            const content = contentInput.value.trim()
+            
+            if (!content) {
+                errorDiv.textContent = 'Пост не может быть пустым'
+                return
+            }
+
+            if (content.length > 600) {
+                errorDiv.textContent = `Пост слишком длинный. Максимум 600 символов (сейчас ${content.length})`
+                return
+            }
+
+            const originalText = submitBtn.textContent
+            submitBtn.textContent = 'Публикация...'
+            submitBtn.disabled = true
+            errorDiv.textContent = ''
+            successDiv.textContent = ''
+
+            try {
+                const res = await fetch('/api/posts/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content })
+                })
+
+                const data = await res.json()
+
+                if (res.ok) {
+                    successDiv.textContent = 'Пост опубликован!'
+                    contentInput.value = ''
+                    charCounter.textContent = '0'
+                    setTimeout(() => {
+                        location.href = '/lenta.html'
+                    }, 1500)
+                } else {
+                    errorDiv.textContent = data.error || 'Ошибка при публикации'
+                    submitBtn.textContent = originalText
+                    submitBtn.disabled = false
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Ошибка соединения'
+                submitBtn.textContent = originalText
+                submitBtn.disabled = false
+            }
+        }
+
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.clear()
+            location.href = '/'
+        }
+    </script>
+</body>
+</html>

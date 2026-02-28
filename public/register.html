@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Регистрация</h1>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Никнейм" minlength="3" required>
+            <input type="password" id="password" placeholder="Пароль" minlength="4" required>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p>Есть аккаунт? <a href="login.html">Войти</a></p>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').onsubmit = async (e) => {
+            e.preventDefault()
+            
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                alert('Регистрация успешна! Теперь войди.')
+                location.href = '/login.html'
+            } else {
+                document.getElementById('error').textContent = data.error
+            }
+        }
+    </script>
+</body>
+</html>

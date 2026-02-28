@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Уведомления | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Уведомления</h1>
+            <div class="nav-menu">
+                <a href="lenta.html" class="btn">Лента</a>
+                <a href="profile.html" class="btn">Профиль</a>
+                <a href="search.html" class="btn">Поиск</a>
+                <button id="logoutBtn" class="btn">Выйти</button>
+            </div>
+        </div>
+
+        <div class="notifications-header">
+            <button id="markAllRead" class="btn">✅ Все прочитано</button>
+        </div>
+
+        <div id="notificationsList" class="notifications-list"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        if (!token) {
+            location.href = '/login.html'
+        }
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                
+                if (!res.ok) throw new Error('Ошибка загрузки')
+                
+                const notifications = await res.json()
+                const listDiv = document.getElementById('notificationsList')
+                
+                if (notifications.length === 0) {
+                    listDiv.innerHTML = '<p class="empty-state">Уведомлений пока нет</p>'
+                    return
+                }
+
+                listDiv.innerHTML = notifications.map(notif => `
+                    <div class="notification ${notif.is_read ? 'read' : 'unread'}" data-id="${notif.id}">
+                        <div class="notification-content">
+                            ${getNotificationText(notif)}
+                        </div>
+                        <div class="notification-time">
+                            ${new Date(notif.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                `).join('')
+
+                notifications.forEach(n => {
+                    if (!n.is_read) {
+                        markAsRead(n.id)
+                    }
+                })
+            } catch (err) {
+                document.getElementById('notificationsList').innerHTML = 
+                    '<p class="error">Ошибка загрузки уведомлений</p>'
+            }
+        }
+
+        function getNotificationText(notif) {
+            const fromUser = notif.from_user_id?.username || 'Кто-то'
+            
+            if (notif.type === 'like') {
+                return `❤️ <strong>@${fromUser}</strong> лайкнул твой пост`
+            } else if (notif.type === 'subscribe') {
+                return `👤 <strong>@${fromUser}</strong> подписался на тебя`
+            }
+            return 'Новое уведомление'
+        }
+
+        async function markAsRead(id) {
+            try {
+                await fetch(`/api/notifications/${id}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+            } catch (err) {
+                console.log('Ошибка при отметке:', err)
+            }
+        }
+
+        document.getElementById('markAllRead').onclick = async () => {
+            try {
+                await fetch('/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                
+                document.querySelectorAll('.notification').forEach(n => {
+                    n.classList.remove('unread')
+                    n.classList.add('read')
+                })
+            } catch (err) {
+                alert('Ошибка при отметке всех')
+            }
+        }
+
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.clear()
+            location.href = '/'
+        }
+
+        loadNotifications()
+    </script>
+</body>
+</html>
