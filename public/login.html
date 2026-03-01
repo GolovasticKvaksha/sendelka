@@ -20,10 +20,11 @@
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault()
             
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'login',
                     username: document.getElementById('username').value,
                     password: document.getElementById('password').value
                 })

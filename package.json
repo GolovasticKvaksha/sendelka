@@ -1,15 +1,15 @@
 {
   "name": "sendelka",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
-    "vercel": "^50.25.4"
+    "vercel": "^34.0.0"
   }
 }

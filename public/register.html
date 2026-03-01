@@ -20,10 +20,11 @@
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault()
             
-            const res = await fetch('/api/auth/register', {
+            const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'register',
                     username: document.getElementById('username').value,
                     password: document.getElementById('password').value
                 })
@@ -32,7 +33,7 @@
             const data = await res.json()
             
             if (data.success) {
-                alert('Регистрация успешна! Теперь войди.')
+                alert('Регистрация успешна! Теперь войдите.')
                 location.href = '/login.html'
             } else {
                 document.getElementById('error').textContent = data.error

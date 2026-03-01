@@ -42,75 +42,112 @@
         const token = localStorage.getItem('token')
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
         
-        if (!token) {
-            location.href = '/login.html'
-        }
+        if (!token) location.href = '/login.html'
 
         const urlParams = new URLSearchParams(window.location.search)
         const username = urlParams.get('username') || currentUser.username
 
         async function loadProfile() {
-            try {
-                const res = await fetch(`/api/user/${username}?currentUserId=${currentUser.id}`)
-                profile = await res.json()
-				if (data.error) {
-					document.body.innerHTML = `<div class="container"><h1>Ошибка: ${data.error}</h1><a href="lenta.html">Назад</a></div>`
-					return
-				}
-				const profile = data  // теперь data — это сам профиль
+			const res = await fetch('/api/user', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'profile',
+					username,
+					currentUserId: currentUser.id
+				})
+			})
 
-				window.profileId = profile.id
-                if (res.status === 404) {
-                    document.body.innerHTML = '<div class="container"><h1>Пользователь не найден</h1><a href="lenta.html">Назад</a></div>'
-                    return
-                }
+			const profile = await res.json()
 
-                window.profileId = profile.id
+			if (profile.error) {
+				document.body.innerHTML = `<div class="container"><h1>Ошибка: ${profile.error}</h1><a href="lenta.html">Назад</a></div>`
+				return
+			}
 
-                document.getElementById('profileInfo').innerHTML = `
-                    <h2>
-                        @${profile.username}
-                        ${profile.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-                    </h2>
-                    <p>На сайте с: ${new Date(profile.created_at).toLocaleDateString()}</p>
-                `
+			window.profileId = profile.id
 
-                document.getElementById('postsCount').textContent = profile.posts_count || 0
-                document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
-                document.getElementById('likesCount').textContent = profile.total_likes_received || 0
+			document.getElementById('profileInfo').innerHTML = `
+				<h2>
+					@${profile.username}
+					${profile.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+				</h2>
+				<p>На сайте с: ${new Date(profile.created_at).toLocaleDateString()}</p>
+			`
 
-                if (currentUser.username !== username) {
-                    const btnText = profile.isSubscribed ? 'Отписаться' : 'Подписаться'
-                    document.getElementById('subscribeBtn').innerHTML = `
-                        <button id="subscribeBtnAction" class="btn">${btnText}</button>
-                    `
-                    document.getElementById('subscribeBtnAction').onclick = toggleSubscribe
-                } else {
-                    document.getElementById('subscribeBtn').innerHTML = ''
-                }
+			document.getElementById('postsCount').textContent = profile.posts_count || 0
+			document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
+			document.getElementById('likesCount').textContent = profile.total_likes_received || 0
 
-                const postsDiv = document.getElementById('posts')
-                if (profile.posts && profile.posts.length > 0) {
-                    postsDiv.innerHTML = profile.posts.map(post => `
-                        <div class="post">
-                            <div class="post-header">
-                                <strong>@${profile.username}</strong>
-                                <small>${new Date(post.created_at).toLocaleString()}</small>
-                            </div>
-                            <div class="post-content">${post.content}</div>
-                            <div class="post-stats">
-                                <span>❤️ ${post.likes_count || 0}</span>
-                                <span>👁️ ${post.views_count || 0}</span>
-                            </div>
-                        </div>
-                    `).join('')
-                } else {
-                    postsDiv.innerHTML = '<p>У пользователя пока нет постов</p>'
-                }
-            } catch (err) {
-                alert('Ошибка загрузки профиля')
-            }
-        }
+			if (currentUser.username !== username) {
+				const btnText = profile.isSubscribed ? 'Отписаться' : 'Подписаться'
+				document.getElementById('subscribeBtn').innerHTML = `
+					<button id="subscribeBtnAction" class="btn">${btnText}</button>
+				`
+				document.getElementById('subscribeBtnAction').onclick = toggleSubscribe
+			} else {
+				document.getElementById('subscribeBtn').innerHTML = ''
+			}
+
+			const postsDiv = document.getElementById('posts')
+			if (profile.posts?.length) {
+				postsDiv.innerHTML = profile.posts.map(post => `
+					<div class="post" data-post-id="${post.id}">
+						<div class="post-header">
+							<strong>@${profile.username}</strong>
+							<small>${new Date(post.created_at).toLocaleString()}</small>
+							${(currentUser.is_admin || currentUser.id === post.user_id) ? `
+								<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
+							` : ''}
+						</div>
+						<div class="post-content">${post.content}</div>
+						<div class="post-stats">
+							<span>❤️ ${post.likes_count || 0}</span>
+							<span>👁️ ${post.views_count || 0}</span>
+						</div>
+					</div>
+				`).join('')
+			} else {
+				postsDiv.innerHTML = '<p>У пользователя пока нет постов</p>'
+			}
+
+			// ========== ИСПРАВЛЕННЫЙ ОБРАБОТЧИК УДАЛЕНИЯ ==========
+			document.querySelectorAll('.delete-post-btn').forEach(btn => {
+				btn.addEventListener('click', async (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					
+					if (!confirm('Удалить пост?')) return
+					
+					const postId = btn.dataset.postId
+					const postElement = btn.closest('.post')
+					
+					const res = await fetch('/api/posts', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${token}`
+						},
+						body: JSON.stringify({
+							action: 'delete',
+							postId: parseInt(postId)
+						})
+					})
+					
+					const data = await res.json()
+					
+					if (data.success) {
+						postElement.remove()
+						// ===== ОБНОВЛЯЕМ СЧЕТЧИК ПОСТОВ =====
+						const postsCount = document.getElementById('postsCount')
+						postsCount.textContent = parseInt(postsCount.textContent) - 1
+					} else {
+						alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+					}
+				})
+			})
+		}
+
 
         async function toggleSubscribe() {
             const btn = document.getElementById('subscribeBtnAction')
@@ -119,28 +156,27 @@
             btn.disabled = true
             btn.textContent = '...'
             
-            try {
-                const res = await fetch(`/api/user/${window.profileId}/subscribe`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'subscribe',
+                    targetUserId: window.profileId
                 })
+            })
 
-                const data = await res.json()
-                
-                if (res.ok) {
-                    btn.textContent = data.subscribed ? 'Отписаться' : 'Подписаться'
-                    const subsCount = document.getElementById('subscribersCount')
-                    subsCount.textContent = parseInt(subsCount.textContent) + (data.subscribed ? 1 : -1)
-                } else {
-                    btn.textContent = originalText
-                    alert('Ошибка: ' + data.error)
-                }
-            } catch (err) {
+            const data = await res.json()
+            
+            if (!data.error) {
+                btn.textContent = data.subscribed ? 'Отписаться' : 'Подписаться'
+                const subsCount = document.getElementById('subscribersCount')
+                subsCount.textContent = parseInt(subsCount.textContent) + (data.subscribed ? 1 : -1)
+            } else {
                 btn.textContent = originalText
-                alert('Ошибка соединения')
+                alert('Ошибка: ' + data.error)
             }
             
             btn.disabled = false

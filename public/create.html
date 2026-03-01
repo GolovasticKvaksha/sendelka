@@ -32,7 +32,7 @@
             </div>
             
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary" id="submitBtn">Опубликовать</button>
+                <button type="submit" class="btn btn-primary">Опубликовать</button>
                 <a href="lenta.html" class="btn">Отмена</a>
             </div>
         </form>
@@ -45,32 +45,25 @@
         const token = localStorage.getItem('token')
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         
-        if (!token) {
-            location.href = '/login.html'
-        }
+        if (!token) location.href = '/login.html'
 
-        const postForm = document.getElementById('postForm')
         const contentInput = document.getElementById('content')
         const charCounter = document.getElementById('currentChars')
         const errorDiv = document.getElementById('error')
         const successDiv = document.getElementById('success')
-        const submitBtn = document.getElementById('submitBtn')
+        const submitBtn = document.querySelector('button[type="submit"]')
 
         contentInput.addEventListener('input', () => {
             const length = contentInput.value.length
             charCounter.textContent = length
             
             const counter = document.getElementById('charCounter')
-            if (length > 550) {
-                counter.style.color = '#ff4444'
-            } else if (length > 500) {
-                counter.style.color = '#ff8800'
-            } else {
-                counter.style.color = '#666'
-            }
+            if (length > 550) counter.style.color = '#ff4444'
+            else if (length > 500) counter.style.color = '#ff8800'
+            else counter.style.color = '#666'
         })
 
-        postForm.onsubmit = async (e) => {
+        document.getElementById('postForm').onsubmit = async (e) => {
             e.preventDefault()
             
             const content = contentInput.value.trim()
@@ -81,44 +74,38 @@
             }
 
             if (content.length > 600) {
-                errorDiv.textContent = `Пост слишком длинный. Максимум 600 символов (сейчас ${content.length})`
+                errorDiv.textContent = `Максимум 600 символов (сейчас ${content.length})`
                 return
             }
 
-            const originalText = submitBtn.textContent
-            submitBtn.textContent = 'Публикация...'
             submitBtn.disabled = true
+            submitBtn.textContent = 'Публикация...'
             errorDiv.textContent = ''
             successDiv.textContent = ''
 
-            try {
-                const res = await fetch('/api/posts/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ content })
+            const res = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'create',
+                    content
                 })
+            })
 
-                const data = await res.json()
+            const data = await res.json()
 
-                if (res.ok) {
-                    successDiv.textContent = 'Пост опубликован!'
-                    contentInput.value = ''
-                    charCounter.textContent = '0'
-                    setTimeout(() => {
-                        location.href = '/lenta.html'
-                    }, 1500)
-                } else {
-                    errorDiv.textContent = data.error || 'Ошибка при публикации'
-                    submitBtn.textContent = originalText
-                    submitBtn.disabled = false
-                }
-            } catch (err) {
-                errorDiv.textContent = 'Ошибка соединения'
-                submitBtn.textContent = originalText
+            if (!data.error) {
+                successDiv.textContent = 'Пост опубликован!'
+                contentInput.value = ''
+                charCounter.textContent = '0'
+                setTimeout(() => location.href = '/lenta.html', 1500)
+            } else {
+                errorDiv.textContent = data.error
                 submitBtn.disabled = false
+                submitBtn.textContent = 'Опубликовать'
             }
         }
 

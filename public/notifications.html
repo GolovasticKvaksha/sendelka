@@ -27,90 +27,77 @@
         const token = localStorage.getItem('token')
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         
-        if (!token) {
-            location.href = '/login.html'
-        }
+        if (!token) location.href = '/login.html'
 
         async function loadNotifications() {
-            try {
-                const res = await fetch('/api/notifications', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-                
-                if (!res.ok) throw new Error('Ошибка загрузки')
-                
-                const notifications = await res.json()
-                const listDiv = document.getElementById('notificationsList')
-                
-                if (notifications.length === 0) {
-                    listDiv.innerHTML = '<p class="empty-state">Уведомлений пока нет</p>'
-                    return
-                }
+            const res = await fetch('/api/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'list' })
+            })
 
-                listDiv.innerHTML = notifications.map(notif => `
-                    <div class="notification ${notif.is_read ? 'read' : 'unread'}" data-id="${notif.id}">
-                        <div class="notification-content">
-                            ${getNotificationText(notif)}
-                        </div>
-                        <div class="notification-time">
-                            ${new Date(notif.created_at).toLocaleString()}
-                        </div>
-                    </div>
-                `).join('')
-
-                notifications.forEach(n => {
-                    if (!n.is_read) {
-                        markAsRead(n.id)
-                    }
-                })
-            } catch (err) {
-                document.getElementById('notificationsList').innerHTML = 
-                    '<p class="error">Ошибка загрузки уведомлений</p>'
-            }
-        }
-
-        function getNotificationText(notif) {
-            const fromUser = notif.from_user_id?.username || 'Кто-то'
+            const notifications = await res.json()
             
-            if (notif.type === 'like') {
-                return `❤️ <strong>@${fromUser}</strong> лайкнул твой пост`
-            } else if (notif.type === 'subscribe') {
-                return `👤 <strong>@${fromUser}</strong> подписался на тебя`
+            if (notifications.error) {
+                document.getElementById('notificationsList').innerHTML = `<p class="error">${notifications.error}</p>`
+                return
             }
-            return 'Новое уведомление'
+
+            const listDiv = document.getElementById('notificationsList')
+            
+            if (!notifications.length) {
+                listDiv.innerHTML = '<p class="empty-state">Уведомлений пока нет</p>'
+                return
+            }
+
+            listDiv.innerHTML = notifications.map(n => `
+                <div class="notification ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
+                    <div class="notification-content">
+                        ${n.type === 'like' 
+                            ? `❤️ <strong>@${n.from_user_id?.username}</strong> лайкнул твой пост`
+                            : `👤 <strong>@${n.from_user_id?.username}</strong> подписался на тебя`
+                        }
+                    </div>
+                    <div class="notification-time">
+                        ${new Date(n.created_at).toLocaleString()}
+                    </div>
+                </div>
+            `).join('')
+
+            // Отмечаем как прочитанные
+            notifications.forEach(n => {
+                if (!n.is_read) markAsRead(n.id)
+            })
         }
 
         async function markAsRead(id) {
-            try {
-                await fetch(`/api/notifications/${id}/read`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-            } catch (err) {
-                console.log('Ошибка при отметке:', err)
-            }
+            await fetch('/api/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'read', notificationId: id })
+            })
         }
 
         document.getElementById('markAllRead').onclick = async () => {
-            try {
-                await fetch('/api/notifications/read-all', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-                
-                document.querySelectorAll('.notification').forEach(n => {
-                    n.classList.remove('unread')
-                    n.classList.add('read')
-                })
-            } catch (err) {
-                alert('Ошибка при отметке всех')
-            }
+            await fetch('/api/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'readAll' })
+            })
+            
+            document.querySelectorAll('.notification').forEach(n => {
+                n.classList.remove('unread')
+                n.classList.add('read')
+            })
         }
 
         document.getElementById('logoutBtn').onclick = () => {

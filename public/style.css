@@ -22,6 +22,7 @@ body {
 h1 {
     margin-bottom: 20px;
     color: #333;
+    text-align: center;
 }
 
 input, textarea {
@@ -43,17 +44,29 @@ input, textarea {
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
-    margin-right: 10px;
+    margin: 5px;
 }
 
 .btn:hover {
     background: #0051b3;
 }
 
+.btn-primary {
+    background: #0070f3;
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
 .error {
     color: #ff4444;
-    margin-top: 10px;
     text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    background: #ffe5e5;
+    border-radius: 5px;
 }
 
 .success {
@@ -65,40 +78,13 @@ input, textarea {
     border-radius: 5px;
 }
 
-/* Профиль */
-.profile-info {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.stats {
+/* Навигация */
+.nav-menu {
     display: flex;
-    justify-content: space-around;
-    margin: 20px 0;
-    padding: 20px 0;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
-}
-
-.stat {
-    text-align: center;
-}
-
-.stat-value {
-    display: block;
-    font-size: 24px;
-    font-weight: bold;
-    color: #0070f3;
-}
-
-.stat-label {
-    color: #666;
-    font-size: 14px;
-}
-
-.subscribe-section {
-    text-align: center;
-    margin: 20px 0;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 /* Посты */
@@ -109,14 +95,17 @@ input, textarea {
 
 .post-header {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 10px;
     color: #666;
+    flex-wrap: wrap;
 }
 
 .post-author {
     text-decoration: none;
     color: inherit;
+    font-weight: bold;
 }
 
 .post-author:hover {
@@ -127,6 +116,9 @@ input, textarea {
     font-size: 16px;
     line-height: 1.5;
     margin-bottom: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .post-actions {
@@ -169,6 +161,78 @@ input, textarea {
     gap: 15px;
     margin-top: 10px;
     color: #666;
+}
+
+.delete-post-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: auto;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.delete-post-btn:hover {
+    opacity: 1;
+}
+
+/* Профиль */
+.profile-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.profile-info h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    padding: 20px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #0070f3;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.subscribe-section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Админ-галочка */
+.admin-badge {
+    display: inline-block;
+    color: #0070f3;
+    font-weight: bold;
+    font-size: 18px;
+    background: #e6f0ff;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    cursor: help;
 }
 
 /* Поиск */
@@ -220,6 +284,7 @@ input, textarea {
     display: inline-block;
     font-size: 24px;
     margin-bottom: 20px;
+    cursor: pointer;
 }
 
 .notifications-count {
@@ -249,6 +314,10 @@ input, textarea {
 .notification.unread {
     background: #f0f7ff;
     border-left: 3px solid #0070f3;
+}
+
+.notification.read {
+    opacity: 0.8;
 }
 
 .notification-content {
@@ -291,50 +360,6 @@ input, textarea {
 }
 
 /* Создание поста */
-.post-input {
-    width: 100%;
-    padding: 15px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 10px;
-    resize: vertical;
-    margin-bottom: 20px;
-    font-family: inherit;
-}
-
-.post-input:focus {
-    outline: none;
-    border-color: #0070f3;
-}
-
-.form-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-.btn-primary {
-    background: #0070f3;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #0051b3;
-}
-
-/* Навигация */
-.nav-menu {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.header {
-    text-align: center;
-    margin-bottom: 30px;
-}
 .textarea-wrapper {
     position: relative;
     margin-bottom: 20px;
@@ -346,7 +371,7 @@ input, textarea {
     right: 10px;
     color: #666;
     font-size: 12px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255,255,255,0.9);
     padding: 2px 6px;
     border-radius: 10px;
     transition: color 0.2s;
@@ -373,97 +398,4 @@ input, textarea {
     gap: 10px;
     justify-content: flex-end;
     margin-top: 20px;
-}
-
-.btn-primary {
-    background: #0070f3;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #0051b3;
-}
-
-.btn-primary:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-}
-
-.error {
-    color: #ff4444;
-    text-align: center;
-    margin-top: 20px;
-    padding: 10px;
-    background: #ffe5e5;
-    border-radius: 5px;
-}
-
-.success {
-    color: #00c851;
-    text-align: center;
-    margin-top: 20px;
-    padding: 10px;
-    background: #e8f5e9;
-    border-radius: 5px;
-}
-.post-content {
-    font-size: 16px;
-    line-height: 1.5;
-    margin-bottom: 10px;
-    word-wrap: break-word;        /* Переносит длинные слова */
-    overflow-wrap: break-word;     /* То же самое для современных браузеров */
-    white-space: pre-wrap;         /* Сохраняет переносы строк из текста */
-    max-width: 100%;               /* Не выходит за границы */
-}
-
-/* Для отдельного поста, если есть */
-.post-content-large {
-    font-size: 18px;
-    line-height: 1.6;
-    margin: 20px 0;
-    padding: 20px;
-    background: #f9f9f9;
-    border-radius: 10px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-}
-.admin-badge {
-    display: inline-block;
-    margin-left: 5px;
-    color: #0070f3;
-    font-weight: bold;
-    font-size: 18px;
-    background: #e6f0ff;
-    width: 22px;
-    height: 22px;
-    line-height: 22px;
-    text-align: center;
-    border-radius: 50%;
-    cursor: help;
-}
-
-.delete-post-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    margin-left: auto;
-    padding: 0 5px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.delete-post-btn:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.post-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    color: #666;
-    flex-wrap: wrap;
 }

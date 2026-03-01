@@ -27,9 +27,7 @@
         const token = localStorage.getItem('token')
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         
-        if (!token) {
-            location.href = '/login.html'
-        }
+        if (!token) location.href = '/login.html'
 
         const searchInput = document.getElementById('searchInput')
         const searchBtn = document.getElementById('searchBtn')
@@ -45,38 +43,35 @@
 
             resultDiv.innerHTML = '<p>Ищем...</p>'
 
-            const res = await fetch(`/api/search?username=${encodeURIComponent(username)}`)
-            
-            if (res.status === 404) {
-                resultDiv.innerHTML = '<p class="error">Пользователь не найден</p>'
+            const res = await fetch('/api/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            })
+
+            const user = await res.json()
+
+            if (user.error) {
+                resultDiv.innerHTML = `<p class="error">${user.error}</p>`
                 return
             }
-
-            if (!res.ok) {
-                resultDiv.innerHTML = '<p class="error">Ошибка поиска</p>'
-                return
-            }
-
-            const foundUser = await res.json()
 
             resultDiv.innerHTML = `
                 <div class="user-card">
-                    <h3>@${foundUser.username}</h3>
+                    <h3>@${user.username} ${user.is_admin ? '✓' : ''}</h3>
                     <div class="user-stats">
-                        <span>📝 ${foundUser.posts_count || 0} постов</span>
-                        <span>👥 ${foundUser.subscribers_count || 0} подписчиков</span>
-                        <span>❤️ ${foundUser.total_likes_received || 0} лайков</span>
+                        <span>📝 ${user.posts_count || 0} постов</span>
+                        <span>👥 ${user.subscribers_count || 0} подписчиков</span>
+                        <span>❤️ ${user.total_likes_received || 0} лайков</span>
                     </div>
-                    <p>На сайте с: ${new Date(foundUser.created_at).toLocaleDateString()}</p>
-                    <a href="profile.html?username=${foundUser.username}" class="btn">Перейти в профиль</a>
+                    <p>На сайте с: ${new Date(user.created_at).toLocaleDateString()}</p>
+                    <a href="profile.html?username=${user.username}" class="btn">Перейти в профиль</a>
                 </div>
             `
         }
 
         searchBtn.onclick = searchUser
-        searchInput.onkeypress = (e) => {
-            if (e.key === 'Enter') searchUser()
-        }
+        searchInput.onkeypress = (e) => e.key === 'Enter' && searchUser()
 
         document.getElementById('logoutBtn').onclick = () => {
             localStorage.clear()

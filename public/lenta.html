@@ -33,83 +33,66 @@
         const token = localStorage.getItem('token')
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         
-        if (!token) {
-            location.href = '/login.html'
-        }
+        if (!token) location.href = '/login.html'
 
         let currentFilter = 'all'
 
         async function loadPosts() {
-            const res = await fetch(`/api/posts?userId=${user.id}&filter=${currentFilter}`)
+            const res = await fetch('/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'feed',
+                    userId: user.id,
+                    filter: currentFilter
+                })
+            })
+            
             const posts = await res.json()
             
-            const postsDiv = document.getElementById('posts')
-            
-            if (posts.length === 0) {
-                if (currentFilter === 'subscriptions') {
-                    postsDiv.innerHTML = '<p>Ты пока ни на кого не подписан. <a href="search.html">Найти людей</a></p>'
-                } else {
-                    postsDiv.innerHTML = '<p>Пока нет постов</p>'
-                }
+            if (posts.error) {
+                document.getElementById('posts').innerHTML = `<p>Ошибка: ${posts.error}</p>`
                 return
             }
+
+            const postsDiv = document.getElementById('posts')
             
+            if (!Array.isArray(posts) || posts.length === 0) {
+                postsDiv.innerHTML = currentFilter === 'subscriptions' 
+                    ? '<p>Ты пока ни на кого не подписан. <a href="search.html">Найти людей</a></p>'
+                    : '<p>Пока нет постов</p>'
+                return
+            }
+
             postsDiv.innerHTML = posts.map(post => `
-				<div class="post" data-post-id="${post.id}">
-					<div class="post-header">
-						<a href="profile.html?username=${post.users?.username}" class="post-author">
-							<strong>@${post.users?.username}</strong>
-							${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-						</a>
-						<small>${new Date(post.created_at).toLocaleString()}</small>
-						${user.is_admin ? `
-							<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост (админ)">🗑️</button>
-						` : ''}
-				</div>
-				<div class="post-content">${post.content}</div>
-				<div class="post-actions">
-					<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
-						❤️ <span class="likes-count">${post.likes_count || 0}</span>
-					</button>
-					<span class="views-count">👁️ ${post.views_count || 0}</span>
-				</div>
-			</div>
+                <div class="post" data-post-id="${post.id}">
+                    <div class="post-header">
+                        <a href="profile.html?username=${post.users?.username}" class="post-author">
+                            <strong>@${post.users?.username}</strong>
+                            ${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+                        </a>
+                        <small>${new Date(post.created_at).toLocaleString()}</small>
+                        ${(user.is_admin || post.user_id === user.id) ? `
+                            <button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
+                        ` : ''}
+                    </div>
+                    <div class="post-content">${post.content}</div>
+                    <div class="post-actions">
+                        <button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+                            ❤️ <span class="likes-count">${post.likes_count || 0}</span>
+                        </button>
+                        <span class="views-count">👁️ ${post.views_count || 0}</span>
+                    </div>
+                </div>
             `).join('')
 
             document.querySelectorAll('.like-btn').forEach(btn => {
                 btn.addEventListener('click', likePost)
             })
-			document.querySelectorAll('.delete-post-btn').forEach(btn => {
-				btn.addEventListener('click', async (e) => {
-					e.preventDefault()
-					e.stopPropagation()
-					
-					if (!confirm('Удалить этот пост?')) return
-					
-					const postId = btn.dataset.postId
-					const postElement = btn.closest('.post')
-					
-					try {
-						const res = await fetch(`/api/posts/delete?postId=${postId}`, {
-							method: 'DELETE',
-							headers: {
-								'Authorization': `Bearer ${token}`
-							}
-						})
-						
-						if (res.ok) {
-							postElement.remove()
-							alert('Пост удалён')
-						} else {
-							const data = await res.json()
-							alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
-						}
-					} catch (err) {
-						alert('Ошибка соединения')
-					}
-				})
-			})
-    // ========== КОНЕЦ ВСТАВКИ ==========
+
+            document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                btn.addEventListener('click', deletePost)
+            })
         }
 
         async function likePost(e) {
@@ -117,42 +100,72 @@
             const postId = btn.dataset.postId
             const likesSpan = btn.querySelector('.likes-count')
             
-            const res = await fetch(`/api/posts/${postId}/like`, {
+            const res = await fetch('/api/posts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                body: JSON.stringify({
+                    action: 'like',
+                    postId: parseInt(postId)
+                })
             })
 
-            if (res.ok) {
-                const data = await res.json()
+            const data = await res.json()
+            
+            if (!data.error) {
                 btn.classList.toggle('liked', data.liked)
                 likesSpan.textContent = parseInt(likesSpan.textContent) + (data.liked ? 1 : -1)
                 loadNotificationsCount()
             }
         }
 
-        async function loadNotificationsCount() {
-            try {
-                const res = await fetch('/api/notifications/count', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+        async function deletePost(e) {
+            if (!confirm('Удалить пост?')) return
+            
+            const btn = e.currentTarget
+            const postId = btn.dataset.postId
+            
+            const res = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'delete',
+                    postId: parseInt(postId)
                 })
-                
-                if (res.ok) {
-                    const data = await res.json()
-                    const countSpan = document.getElementById('notificationsCount')
-                    if (data.count > 0) {
-                        countSpan.textContent = data.count
-                        countSpan.style.display = 'inline'
-                    } else {
-                        countSpan.style.display = 'none'
-                    }
-                }
-            } catch (err) {
-                console.log('Ошибка загрузки уведомлений:', err)
+            })
+
+            const data = await res.json()
+            
+            if (data.success) {
+                btn.closest('.post').remove()
+            } else {
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+            }
+        }
+
+        async function loadNotificationsCount() {
+            const res = await fetch('/api/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'count' })
+            })
+            
+            const data = await res.json()
+            
+            const countSpan = document.getElementById('notificationsCount')
+            if (data.count > 0) {
+                countSpan.textContent = data.count
+                countSpan.style.display = 'inline'
+            } else {
+                countSpan.style.display = 'none'
             }
         }
 
@@ -170,7 +183,12 @@
             loadPosts()
         }
 
-        document.getElementById('logoutBtn').onclick = () => {
+        document.getElementById('logoutBtn').onclick = async () => {
+            await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout' })
+            })
             localStorage.clear()
             location.href = '/'
         }
