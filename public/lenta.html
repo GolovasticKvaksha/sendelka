@@ -6,6 +6,13 @@
 </head>
 <body>
     <div class="container">
+	
+		<div class="stats-header">
+			<div class="user-counter">
+				🟢 ВСЕГО НАС: <span id="totalUsers">...</span>
+			</div>
+		</div>
+		
         <div class="header">
             <h1>📦 Лента</h1>
             <div class="nav-menu">
@@ -94,7 +101,27 @@
                 btn.addEventListener('click', deletePost)
             })
         }
-
+		
+		async function loadTotalUsers() {
+			try {
+				const res = await fetch('/api/user', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'total_users' })
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error) {
+					document.getElementById('totalUsers').textContent = data.total
+				} else {
+					document.getElementById('totalUsers').textContent = '?'
+				}
+			} catch (err) {
+				document.getElementById('totalUsers').textContent = '?'
+			}
+		}
+		
         async function likePost(e) {
             const btn = e.currentTarget
             const postId = btn.dataset.postId
@@ -199,7 +226,8 @@
 
         loadPosts()
         loadNotificationsCount()
-        setInterval(loadNotificationsCount, 30000)
+		loadTotalUsers() 
+        setInterval(loadNotificationsCount, 5000)
     </script>
 </body>
 </html>

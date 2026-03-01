@@ -94,7 +94,20 @@ export default async function handler(req, res) {
         return res.status(200).json({ subscribed: true })
       }
     }
+	// =========================================
+	// ПОЛУЧИТЬ КОЛИЧЕСТВО ПОЛЬЗОВАТЕЛЕЙ
+	// =========================================
+	if (action === 'total_users') {
+	  const { count, error } = await supabase
+		.from('users')
+		.select('*', { count: 'exact', head: true })
 
+	  if (error) {
+		return res.status(200).json({ error: error.message })
+	  }
+
+	  return res.status(200).json({ total: count })
+	}
     return res.status(200).json({ error: 'Unknown action' })
 
   } catch (err) {
