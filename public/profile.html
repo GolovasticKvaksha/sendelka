@@ -194,6 +194,11 @@
 							` : ''}
 						</div>
 						<div class="post-content">${post.content}</div>
+						${post.image_url ? `
+							<div class="post-image">
+								<img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
+							</div>
+						` : ''}
 						<div class="post-stats">
 							<span>❤️ ${post.likes_count || 0}</span>
 							<span>👁️ ${post.views_count || 0}</span>

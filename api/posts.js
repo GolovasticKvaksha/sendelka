@@ -100,7 +100,7 @@ export default async function handler(req, res) {
 		return res.status(200).json({ error: 'Не авторизован' })
 	  }
 
-	  const { content } = req.body
+	  const { content, imageUrl } = req.body
 
 	  if (!content) {
 		return res.status(200).json({ error: 'Пост не может быть пустым' })
@@ -110,9 +110,17 @@ export default async function handler(req, res) {
 		return res.status(200).json({ error: `Максимум 600 символов (сейчас ${content.length})` })
 	  }
 
-	  // ===== АНТИСПАМ: проверяем количество постов за последние 8 минут =====
-	  const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000).toISOString()
+	  // Проверяем, является ли пользователь админом (для фото)
+	  const { data: user } = await supabase
+		.from('users')
+		.select('is_admin')
+		.eq('id', userId)
+		.single()
 
+	  const isAdmin = user?.is_admin || false
+
+	  // Проверка антиспама
+	  const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000).toISOString()
 	  const { count, error: countError } = await supabase
 		.from('posts')
 		.select('*', { count: 'exact', head: true })
@@ -120,23 +128,32 @@ export default async function handler(req, res) {
 		.gte('created_at', eightMinutesAgo)
 
 	  if (countError) {
-		console.error('Antispam error:', countError)
 		return res.status(200).json({ error: 'Ошибка проверки антиспама' })
 	  }
 
 	  if (count >= 5) {
-		return res.status(200).json({ error: 'Слишком часто! Подожди немного перед созданием нового поста.' })
+		return res.status(200).json({ error: 'Слишком часто! Подожди немного.' })
 	  }
 
-	  // ===== СОЗДАЁМ ПОСТ =====
+	  // Создаём пост (с фото только для админов)
+	  const postData = {
+		content,
+		user_id: userId,
+		likes_count: 0,
+		views_count: 0
+	  }
+
+	  // Если админ и передана ссылка на фото — добавляем
+	  if (isAdmin && imageUrl) {
+		// Простая валидация URL
+		if (imageUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+		  postData.image_url = imageUrl
+		}
+	  }
+
 	  const { data, error } = await supabase
 		.from('posts')
-		.insert([{
-		  content,
-		  user_id: userId,
-		  likes_count: 0,
-		  views_count: 0
-		}])
+		.insert([postData])
 		.select()
 
 	  if (error) {

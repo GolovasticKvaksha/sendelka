@@ -158,28 +158,39 @@
 				const subscribeBtnText = post.isSubscribed ? '✓ Подписан' : '+ Подписаться'
 				const subscribeBtnClass = post.isSubscribed ? 'subscribe-btn-inline subscribed' : 'subscribe-btn-inline'
 				
+				// Добавляем блок с фото, если есть
+				const photoHtml = post.image_url ? `
+					<div class="post-image">
+						<img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
+					</div>
+				` : ''
+				
 				return `
 					<div class="post" data-post-id="${post.id}" data-user-id="${post.user_id}">
 						<div class="post-header">
 							<div class="post-author-line">
-								<a href="profile.html?username=${post.users?.username}" class="post-author">
-									<strong>@${post.users?.username}</strong>
-									${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-								</a>
+								<div class="post-author-row">
+									<a href="profile.html?username=${post.users?.username}" class="post-author">
+										<strong>@${post.users?.username}</strong>
+										${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+									</a>
+									<span class="post-date">${new Date(post.created_at).toLocaleString()}</span>
+								</div>
 								${post.user_id !== user.id ? `
-									<button class="${subscribeBtnClass}" 
-											data-user-id="${post.user_id}" 
-											data-post-id="${post.id}">
-										${subscribeBtnText}
-									</button>
+									<div class="subscribe-row">
+										<button class="${subscribeBtnClass}" 
+												data-user-id="${post.user_id}">
+											${subscribeBtnText}
+										</button>
+									</div>
 								` : ''}
-								<small>${new Date(post.created_at).toLocaleString()}</small>
 							</div>
 							${(user.is_admin || post.user_id === user.id) ? `
 								<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
 							` : ''}
 						</div>
 						<div class="post-content">${post.content}</div>
+						${photoHtml}
 						<div class="post-actions">
 							<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
 								❤️ <span class="likes-count">${post.likes_count || 0}</span>

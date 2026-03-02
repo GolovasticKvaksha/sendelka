@@ -34,6 +34,18 @@
                     class="post-input"
                     maxlength="600"
                 ></textarea>
+				<!-- БЛОК ДЛЯ ФОТО (ТОЛЬКО ДЛЯ АДМИНОВ) -->
+				<div id="adminPhotoSection" style="display: none;" class="admin-photo-section">
+					<label class="photo-label">📷 Прикрепить фото (только для админов):</label>
+					<input type="url" id="imageUrl" class="photo-input" 
+						   placeholder="https://... (только .jpg, .png, .gif, .webp)">
+						   
+						<div class="photo-tip">
+							<p>🔗 Нужно загрузить фото? Используй <a href="https://imgfy.ru/" target="_blank" rel="noopener noreferrer">imgfy.ru</a>
+						</div>
+							   
+					<div id="photoPreview" class="photo-preview"></div>
+				</div>
                 <div id="charCounter" class="char-counter">
                     <span id="currentChars">0</span>/600
                 </div>
@@ -54,13 +66,31 @@
         const user = JSON.parse(localStorage.getItem('user') || '{}')
         
         if (!token) location.href = '/login.html'
-
+		
+		// ⬇️ ПРОВЕРЯЕМ, АДМИН ЛИ ПОЛЬЗОВАТЕЛЬ (ВСТАВЛЯЕМ СЮДА) ⬇️
+        if (user.is_admin) {
+            document.getElementById('adminPhotoSection').style.display = 'block'
+        }
+		
         const contentInput = document.getElementById('content')
         const charCounter = document.getElementById('currentChars')
         const errorDiv = document.getElementById('error')
         const successDiv = document.getElementById('success')
         const submitBtn = document.querySelector('button[type="submit"]')
-
+		const imageUrlInput = document.getElementById('imageUrl')
+		
+        if (imageUrlInput) {
+            imageUrlInput.addEventListener('input', function(e) {
+                const url = e.target.value
+                const preview = document.getElementById('photoPreview')
+                
+                if (url && url.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i)) {
+                    preview.innerHTML = `<img src="${url}" class="photo-preview-img" alt="preview">`
+                } else {
+                    preview.innerHTML = ''
+                }
+            })
+        }
         contentInput.addEventListener('input', () => {
             const length = contentInput.value.length
             charCounter.textContent = length
@@ -85,7 +115,10 @@
                 errorDiv.textContent = `Максимум 600 символов (сейчас ${content.length})`
                 return
             }
-
+			
+			// ⬇️ ДОБАВЛЯЕМ ФОТО В ЗАПРОС (ЕСЛИ ЕСТЬ) ⬇️
+            const imageUrl = document.getElementById('imageUrl')?.value || ''
+			
             submitBtn.disabled = true
             submitBtn.textContent = 'Публикация...'
             errorDiv.textContent = ''
@@ -99,7 +132,8 @@
                 },
                 body: JSON.stringify({
                     action: 'create',
-                    content
+                    content,
+					imageUrl: imageUrl || undefined  // ← добавляем фото
                 })
             })
 
@@ -109,6 +143,8 @@
                 successDiv.textContent = 'Пост опубликован!'
                 contentInput.value = ''
                 charCounter.textContent = '0'
+				if (imageUrlInput) imageUrlInput.value = ''  // очищаем поле фото
+				document.getElementById('photoPreview').innerHTML = ''  // очищаем превью
                 setTimeout(() => location.href = '/lenta.html', 1500)
             } else {
                 errorDiv.textContent = data.error

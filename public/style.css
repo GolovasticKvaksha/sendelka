@@ -1055,3 +1055,70 @@ html.dark-theme .post-input:focus {
     border-color: #66aaff;
     outline: none;
 }
+
+/* ПОТОМ УДАЛИТЬ ЭТО!!!!ВНИЗУ */
+
+.admin-photo-section {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 10px;
+}
+
+.photo-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.photo-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.photo-preview {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.photo-preview-img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.post-image {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.post-img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Тёмная тема */
+html.dark-theme .admin-photo-section {
+    background: #3d3d3d;
+}
+
+html.dark-theme .photo-label {
+    color: #aaa;
+}
+
+html.dark-theme .photo-input {
+    background: #2d2d2d;
+    border-color: #555;
+    color: #fff;
+}
+
+html.dark-theme .post-img {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
