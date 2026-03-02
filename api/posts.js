@@ -80,41 +80,60 @@ export default async function handler(req, res) {
     // СОЗДАТЬ ПОСТ
     // =========================================
     if (action === 'create') {
-      const token = getTokenFromHeader(req.headers.authorization)
-      const userId = verifyToken(token)
+	  const token = getTokenFromHeader(req.headers.authorization)
+	  const userId = verifyToken(token)
 
-      if (!userId) {
-        return res.status(200).json({ error: 'Не авторизован' })
-      }
+	  if (!userId) {
+		return res.status(200).json({ error: 'Не авторизован' })
+	  }
 
-      const { content } = req.body
+	  const { content } = req.body
 
-      if (!content) {
-        return res.status(200).json({ error: 'Пост не может быть пустым' })
-      }
+	  if (!content) {
+		return res.status(200).json({ error: 'Пост не может быть пустым' })
+	  }
 
-      if (content.length > 600) {
-        return res.status(200).json({ error: `Максимум 600 символов (сейчас ${content.length})` })
-      }
+	  if (content.length > 600) {
+		return res.status(200).json({ error: `Максимум 600 символов (сейчас ${content.length})` })
+	  }
 
-      const { data, error } = await supabase
-        .from('posts')
-        .insert([{
-          content,
-          user_id: userId,
-          likes_count: 0,
-          views_count: 0
-        }])
-        .select()
+	  // ===== АНТИСПАМ: проверяем количество постов за последние 8 минут =====
+	  const eightMinutesAgo = new Date(Date.now() - 8 * 60 * 1000).toISOString()
 
-      if (error) {
-        return res.status(200).json({ error: error.message })
-      }
+	  const { count, error: countError } = await supabase
+		.from('posts')
+		.select('*', { count: 'exact', head: true })
+		.eq('user_id', userId)
+		.gte('created_at', eightMinutesAgo)
 
-      await supabase.rpc('increment_user_posts', { user_id: userId })
+	  if (countError) {
+		console.error('Antispam error:', countError)
+		return res.status(200).json({ error: 'Ошибка проверки антиспама' })
+	  }
 
-      return res.status(200).json(data[0])
-    }
+	  if (count >= 5) {
+		return res.status(200).json({ error: 'Слишком часто! Подожди немного перед созданием нового поста.' })
+	  }
+
+	  // ===== СОЗДАЁМ ПОСТ =====
+	  const { data, error } = await supabase
+		.from('posts')
+		.insert([{
+		  content,
+		  user_id: userId,
+		  likes_count: 0,
+		  views_count: 0
+		}])
+		.select()
+
+	  if (error) {
+		return res.status(200).json({ error: error.message })
+	  }
+
+	  await supabase.rpc('increment_user_posts', { user_id: userId })
+
+	  return res.status(200).json(data[0])
+	}
 
     // =========================================
     // ЛАЙКНУТЬ/УБРАТЬ ЛАЙК

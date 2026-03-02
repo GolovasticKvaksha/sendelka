@@ -10,43 +10,67 @@ export default async function handler(req, res) {
     // РЕГИСТРАЦИЯ
     // =========================================
     if (action === 'register') {
-      const { username, password } = req.body
-      const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+	  const { username, password } = req.body
+	  const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress
 
-      if (!username || !password) {
-        return res.status(200).json({ error: 'Ник и пароль обязательны' })
-      }
+	  if (!username || !password) {
+		return res.status(200).json({ error: 'Ник и пароль обязательны' })
+	  }
 
-      if (username.length < 3 || password.length < 4) {
-        return res.status(200).json({ error: 'Ник мин 3, пароль мин 4' })
-      }
+	  if (username.length < 3 || password.length < 4) {
+		return res.status(200).json({ error: 'Ник мин 3, пароль мин 4' })
+	  }
 
-      const hashedPassword = await bcrypt.hash(password, 10)
+	  // ===== НАСТРАИВАЕМАЯ ВАЛИДАЦИЯ ЮЗЕРНЕЙМА =====
+	  // ЗДЕСЬ ТЫ МОЖЕШЬ САМ ЗАДАТЬ РАЗРЕШЁННЫЕ СИМВОЛЫ
+	  const allowedChars = 'a-zA-Z0-9._-абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ😀😁😂🤣😃😄😅😆😉😊😋😎😍😘🥰😗😙😚☺🙂🤗🤩🤔🤨😐😑😶🙄😏😣😥😮😛😌😴🥱😫😪😯🤐😜😝🤤😒😓😔😕🙃😤😟😞😖🙁☹😲🤑😢😭😦😧😨😩🤯😬🥴😵🤪😳🥶🥵😱😰😠😡🤬😷🤒🤕🤢🤮🤫🤥🤡🤠🥺🥳😇🤧🤭🧐🤓😈👿👹👺💀😸😺💩🤖👾👽👻☠😹😻😼😽🙀😿😾🐱‍👤🙊🙉🙈🐱‍🚀🐱‍👓🐱‍🐉🐱‍💻🐱‍🏍🐵🐶🐺🐱🦁🐯🦒🦊🐻🐰🐹🐭🐗🐷🐮🦝🐨🐼🐸🦓🐴🦄🐔🐲🐩🐕‍🦺🦮🦧🦍🐒🐾🐽🐕🐈🐆🐅🐎🦌🦏🦛🐪🐐🐑🐏🐖🐄🐃🐂🐫🦙🦘🦥🦨🦡🐘🐁🐍🐢🐊🦎🐿🐇🦔🐀🐉🦕🦖🦦🦈🐬🐳🐋🦀🦞🐙🦑🦐🐡🐠🐟🐚🦆🐓🦃🦅🕊🦢🦜🐣🐤🐥🐧🐦🦉🦚🦩🦇🦋🐌🐛🦟🦗🐜🐝🗣🧞‍♂️🧞‍♀️🦠🕸🕷🦂🐞👤👥👁👀🦴🦷👅👄🤼‍♀️🤼‍♂️⛷🤺👣🦿🦾🧠👯‍♂️👯‍♀️💑👩‍❤️‍👩👨‍❤️‍👨💏👩‍❤️‍💋‍👩👨‍❤️‍💋‍👨👨‍👨‍👧👨‍👨‍👦👨‍👩‍👧‍👧👨‍👩‍👦‍👦👨‍👩‍👧‍👦👨‍👩‍👧👨‍👩‍👦👪👨‍👨‍👧‍👦👨‍👨‍👦‍👦👨‍👨‍👧‍👧👩‍👩‍👦👩‍👩‍👧👩‍👩‍👧‍👦👩‍👩‍👦‍👦👩‍👩‍👧‍👧👨‍👧‍👦👨‍👧👨‍👦👩‍👧‍👧👩‍👦‍👦👩‍👧‍👦👩‍👧👩‍👦👨‍👦‍👦👨‍👧‍👧‍👩💅🤝🙏🤚👋🤟✍👏👐🙌🤲🤜🤛👊✊👎👍👌✋👆👇✌🤞🖖🤘🤙🖐🤙🖖🤘🤞✌👇👆☝👉👈🤏👃🦻👂🦶🦵💪🤳👨‍🦯👨‍🦼👩‍🦼👨‍🦽👩‍🦽👩👩‍🦰👶🤴🎅🧔👳‍👵🧓👴👼🌍🌌🌎🌏🌝🌑🌒🌓🌔🌕🌖🌗🌘🌟⭐🌞☀🌜🌛🌚🌙🌠☄🌡🌬🌀❤🧡💛💚💙💜🤎🖤💖💗💓💞💕❣💔🤍💘💝💌💟💢💥💤💦💨💫🕳☮✡☯🆔♾⛎♈♐♏♎♍♌♋♊♉♑♒♓⚛🅰🅱🆎🆑🅾🆘🛑📛🚼⛔❌⭕🚫🔇🔕🚭🚷🚯🚳🚱🔞📵❗❕🔱🔆🔅💯⁉‼❔❓⚜〽☢☣⚠🚸🔰♻🈯💹❇✳❎✅💠🌐Ⓜ🈂➿🛂🛃🛄🛅♿📶🚮🚻🚺🚹🚰🅿🚾🈁🆖🆗🆙🆒🆕🆓#️⃣6️⃣5️⃣4️⃣3️⃣2️⃣1️⃣0️⃣*️⃣7️⃣8️⃣9️⃣🔟🔢▶⏸⏯🔁🔀⏪⏩⏭⏮⏺⏹🔂◀🔼⏫🔽⏬⏏🎦↖↙↘↗⬇⬆⬅➡↕↔🔄↪↩⤴⤵ℹ🔜🔝🔛🔃🔣🔠🔡🔤☑🔚🔙〰➰✔💲💱🔘™®©➗✖➖➕🔴🟠🟡🟢🔵🟣🟤⚫🟫🟪🟩🟦🟨🟧🟥⚪⬛⬜◼◻◾◽▪▫🔳🔲🔻🔺🔹🔷🔸🔶💭🗯💬🗨👁‍🗨🕐🕑🕒🕚🕙🕘🕗🕖🕕🕔🕓🕛🕜🕝🕞🕟🕠🕡🕢🕧🕦🕥🕤🕣'
+	  
+	  // Создаём регулярное выражение из твоего списка
+	  const allowedCharsRegex = new RegExp(`^[${allowedChars}]+$`)
+	  
+	  if (!allowedCharsRegex.test(username)) {
+		return res.status(200).json({ 
+		  error: 'Имя пользователя содержит недопустимые символы(можно: англ. алфивит, рус. алфавит, цифры, нижнее подчёркивание, тире, точку или некоторые смайлики(ПРОВЕРЬ СОДЕРЖАНИЕ ПРОБЕЛОВ. ИХ НЕЛЬЗЯ))' 
+		})
+	  }
+	  
+	  // ===== ДАЛЬШЕ ИДЁТ ОСТАЛЬНОЙ КОД РЕГИСТРАЦИИ =====
+	  const { count } = await supabase
+		.from('users')
+		.select('*', { count: 'exact', head: true })
+		.eq('ip_address', userIp)
 
-      const { data, error } = await supabase
-        .from('users')
-        .insert([{
-          username,
-          password: hashedPassword,
-          ip_address: userIp,
-          subscribers_count: 0,
-          total_likes_received: 0,
-          posts_count: 0,
-          is_admin: false
-        }])
-        .select()
+	  if (count >= 3) {
+		return res.status(200).json({ error: 'С одного IP можно создать не больше 3 аккаунтов' })
+	  }
 
-      if (error) {
-        if (error.code === '23505') {
-          return res.status(200).json({ error: 'Ник занят' })
-        }
-        return res.status(200).json({ error: error.message })
-      }
+	  const hashedPassword = await bcrypt.hash(password, 10)
 
-      const user = data[0]
-      delete user.password
-      return res.status(200).json({ success: true, user })
-    }
+	  const { data, error } = await supabase
+		.from('users')
+		.insert([{
+		  username,
+		  password: hashedPassword,
+		  ip_address: userIp,
+		  subscribers_count: 0,
+		  total_likes_received: 0,
+		  posts_count: 0,
+		  is_admin: false
+		}])
+		.select()
+
+	  if (error) {
+		if (error.code === '23505') {
+		  return res.status(200).json({ error: 'Ник занят' })
+		}
+		return res.status(200).json({ error: error.message })
+	  }
+
+	  const user = data[0]
+	  delete user.password
+
+	  return res.status(200).json({ success: true, user })
+	}
 
     // =========================================
     // ЛОГИН

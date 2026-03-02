@@ -421,3 +421,103 @@ input, textarea {
     font-weight: bold;
     color: #0070f3;
 }
+html.dark-theme {
+    background: #0a0a0a;  /* фон для всего документа */
+    min-height: 100%;
+}
+
+html.dark-theme body {
+    background: #0a0a0a;  /* фон для body */
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;  /* если нужны отступы */
+}
+
+html.dark-theme .container {
+    background: #2d2d2d;
+    color: #f0f0f0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+html.dark-theme h1,
+html.dark-theme h2,
+html.dark-theme h3 {
+    color: #ffffff;
+}
+
+html.dark-theme input,
+html.dark-theme textarea {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #f0f0f0;
+}
+
+html.dark-theme .btn {
+    background: #0070f3;
+    color: white;
+}
+
+html.dark-theme .btn:hover {
+    background: #0051b3;
+}
+
+html.dark-theme .post {
+    border-bottom-color: #444;
+}
+
+html.dark-theme .post-header {
+    color: #aaa;
+}
+
+html.dark-theme .post-author {
+    color: #f0f0f0;
+}
+
+html.dark-theme .post-content {
+    color: #e0e0e0;
+}
+
+html.dark-theme .stats-header,
+html.dark-theme .user-counter {
+    background: #3d3d3d;
+    color: #aaa;
+}
+
+html.dark-theme .user-counter span {
+    color: #66a3ff;
+}
+
+html.dark-theme .filter-btn {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+html.dark-theme .filter-btn.active {
+    background: #0070f3;
+    color: white;
+}
+
+html.dark-theme .notification {
+    background: #3d3d3d;
+    border-bottom-color: #555;
+}
+
+html.dark-theme .notification.unread {
+    background: #1a2a3a;
+}
+
+html.dark-theme .error {
+    background: #441111;
+    color: #ff8888;
+}
+
+html.dark-theme .success {
+    background: #113311;
+    color: #88ff88;
+}
+html.dark-theme .views-count {
+    color: #ffffff !important;  /* ярко-белый */
+    font-weight: 500;  /* немного жирнее */
+    text-shadow: 0 0 5px rgba(255,255,255,0.3);  /* лёгкое свечение */
+}

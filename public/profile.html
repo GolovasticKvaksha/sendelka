@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<script>
+		(function() {
+			const savedTheme = localStorage.getItem('theme')
+			if (savedTheme === 'dark') {
+				document.documentElement.classList.add('dark-theme')
+			}
+		})()
+	</script>
     <title>Профиль | Sendelka</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,6 +20,7 @@
                 <a href="lenta.html" class="btn">Лента</a>
                 <a href="create.html" class="btn">Новый пост</a>
                 <a href="search.html" class="btn">Поиск</a>
+				<button id="themeToggle" class="btn">🌙 Тёмная</button>
                 <button id="logoutBtn" class="btn">Выйти</button>
             </div>
         </div>
@@ -188,6 +197,24 @@
         }
 
         loadProfile()
+		
+		// ===== ТЕМНАЯ ТЕМА =====
+		function initTheme() {
+			const savedTheme = localStorage.getItem('theme') || 'light'
+			document.body.className = savedTheme === 'dark' ? 'dark-theme' : ''
+			
+			const themeBtn = document.getElementById('themeToggle')
+			themeBtn.textContent = savedTheme === 'dark' ? '☀️ Светлая' : '🌙 Тёмная'
+			
+			themeBtn.onclick = () => {
+				const isDark = document.body.classList.toggle('dark-theme')
+				localStorage.setItem('theme', isDark ? 'dark' : 'light')
+				themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
+			}
+		}
+
+		// Вызови после загрузки профиля
+		initTheme()
     </script>
 </body>
 </html>
