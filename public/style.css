@@ -1045,3 +1045,13 @@ html.dark-theme textarea::placeholder {
     color: #aaaaaa;
     opacity: 1;
 }
+html.dark-theme .post-input {
+    color: #ffffff;
+    background: #3d3d3d;
+    border-color: #555;
+}
+
+html.dark-theme .post-input:focus {
+    border-color: #66aaff;
+    outline: none;
+}
