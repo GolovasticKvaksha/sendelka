@@ -7,7 +7,7 @@
     "api/**/*.js": {
       "maxDuration": 10
     }
-  }
+  },
   "headers": [
     {
       "source": "/(.*)\\.(css|js|jpg|png|svg|woff2)",
