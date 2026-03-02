@@ -50,6 +50,7 @@ export default async function handler(req, res) {
 		.from('users')
 		.insert([{
 		  username,
+		  bio: '',
 		  password: hashedPassword,
 		  ip_address: userIp,
 		  subscribers_count: 0,

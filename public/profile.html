@@ -26,6 +26,20 @@
         </div>
 
         <div id="profileInfo" class="profile-info"></div>
+		<!-- БЛОК С ОПИСАНИЕМ -->
+		<div id="bioContainer" class="bio-container">
+			<div id="bioDisplay" class="bio-display"></div>
+			<div id="bioEdit" class="bio-edit" style="display: none;">
+				<textarea id="bioInput" class="bio-input" placeholder="Расскажите о себе..." maxlength="90"></textarea>
+				<div class="char-counter-bio">
+					<span id="bioCurrentChars">0</span>/90
+				</div>
+				<div class="bio-actions">
+					<button id="saveBioBtn" class="btn btn-small">Сохранить</button>
+					<button id="cancelBioBtn" class="btn btn-small btn-secondary">Отмена</button>
+				</div>
+			</div>
+		</div>
         <div id="subscribeBtn" class="subscribe-section"></div>
 
         <div class="stats">
@@ -87,7 +101,77 @@
 			document.getElementById('postsCount').textContent = profile.posts_count || 0
 			document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
 			document.getElementById('likesCount').textContent = profile.total_likes_received || 0
+			// ===== ОПИСАНИЕ ПРОФИЛЯ (BIO) =====
+			function renderBio(profile) {
+				const bioContainer = document.getElementById('bioContainer')
+				const bioDisplay = document.getElementById('bioDisplay')
+				const bioEdit = document.getElementById('bioEdit')
+				const bioInput = document.getElementById('bioInput')
+				const bioCounter = document.getElementById('bioCurrentChars')
+				
+				// Отображаем описание с отступами
+				if (profile.bio) {
+					bioDisplay.innerHTML = `
+						<div class="bio-text">${profile.bio.replace(/\n/g, '<br>')}</div>
+					`
+				} else {
+					bioDisplay.innerHTML = '<div class="bio-text bio-empty">Пока ничего не рассказал о себе</div>'
+				}
+				
+				// Если это свой профиль — показываем кнопку редактирования
+				if (currentUser.username === username) {
+					bioDisplay.innerHTML += '<button id="editBioBtn" class="btn btn-small edit-bio-btn">✏️ Редактировать</button>'
+					
+					document.getElementById('editBioBtn').onclick = () => {
+						bioDisplay.style.display = 'none'
+						bioEdit.style.display = 'block'
+						bioInput.value = profile.bio || ''
+						if (bioCounter) bioCounter.textContent = bioInput.value.length
+					}
+					
+					// Счётчик символов
+					if (bioInput) {
+						bioInput.addEventListener('input', () => {
+							if (bioCounter) bioCounter.textContent = bioInput.value.length
+						})
+					}
+					
+					document.getElementById('saveBioBtn').onclick = async () => {
+						const newBio = bioInput.value.trim()
+						
+						const res = await fetch('/api/user', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+								'Authorization': `Bearer ${token}`
+							},
+							body: JSON.stringify({
+								action: 'update_bio',
+								bio: newBio
+							})
+						})
+						
+						const data = await res.json()
+						
+						if (data.success) {
+							profile.bio = newBio
+							bioDisplay.style.display = 'block'
+							bioEdit.style.display = 'none'
+							renderBio(profile)  // обновляем отображение
+						} else {
+							alert('Ошибка: ' + data.error)
+						}
+					}
+					
+					document.getElementById('cancelBioBtn').onclick = () => {
+						bioDisplay.style.display = 'block'
+						bioEdit.style.display = 'none'
+					}
+				}
+			}
 
+			// Вызови эту функцию после загрузки профиля
+			renderBio(profile)
 			if (currentUser.username !== username) {
 				const btnText = profile.isSubscribed ? 'Отписаться' : 'Подписаться'
 				document.getElementById('subscribeBtn').innerHTML = `

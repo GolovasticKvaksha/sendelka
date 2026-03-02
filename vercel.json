@@ -8,4 +8,15 @@
       "maxDuration": 10
     }
   }
+  "headers": [
+    {
+      "source": "/(.*)\\.(css|js|jpg|png|svg|woff2)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
 }

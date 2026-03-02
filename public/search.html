@@ -31,60 +31,91 @@
         <div id="result" class="search-result"></div>
     </div>
 
-    <script>
-        const token = localStorage.getItem('token')
-        const user = JSON.parse(localStorage.getItem('user') || '{}')
-        
-        if (!token) location.href = '/login.html'
+	<script>
+		const token = localStorage.getItem('token')
+		const user = JSON.parse(localStorage.getItem('user') || '{}')
+		
+		if (!token) {
+			location.href = '/login.html'
+		}
 
-        const searchInput = document.getElementById('searchInput')
-        const searchBtn = document.getElementById('searchBtn')
-        const resultDiv = document.getElementById('result')
+		const searchInput = document.getElementById('searchInput')
+		const searchBtn = document.getElementById('searchBtn')
+		const resultDiv = document.getElementById('result')
 
-        async function searchUser() {
-            const username = searchInput.value.trim()
-            
-            if (!username) {
-                resultDiv.innerHTML = '<p class="error">Введите username</p>'
-                return
-            }
+		async function searchUser() {
+			const username = searchInput.value.trim()
+			
+			if (!username) {
+				resultDiv.innerHTML = '<p class="error">Введите username</p>'
+				return
+			}
 
-            resultDiv.innerHTML = '<p>Ищем...</p>'
+			resultDiv.innerHTML = '<p>Ищем...</p>'
 
-            const res = await fetch('/api/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
-            })
+			try {
+				const res = await fetch('/api/search', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ username })
+				})
 
-            const user = await res.json()
+				const data = await res.json()
 
-            if (user.error) {
-                resultDiv.innerHTML = `<p class="error">${user.error}</p>`
-                return
-            }
+				if (data.error) {
+					resultDiv.innerHTML = `<p class="error">${data.error}</p>`
+					return
+				}
 
-            resultDiv.innerHTML = `
-                <div class="user-card">
-                    <h3>@${user.username} ${user.is_admin ? '✓' : ''}</h3>
-                    <div class="user-stats">
-                        <span>📝 ${user.posts_count || 0} постов</span>
-                        <span>👥 ${user.subscribers_count || 0} подписчиков</span>
-                        <span>❤️ ${user.total_likes_received || 0} лайков</span>
-                    </div>
-                    <p>На сайте с: ${new Date(user.created_at).toLocaleDateString()}</p>
-                    <a href="profile.html?username=${user.username}" class="btn">Перейти в профиль</a>
-                </div>
-            `
-        }
+				resultDiv.innerHTML = `
+					<div class="user-card">
+						<h3>@${data.username} ${data.is_admin ? '✓' : ''}</h3>
+						<div class="user-stats">
+							<span>📝 ${data.posts_count || 0} постов</span>
+							<span>👥 ${data.subscribers_count || 0} подписчиков</span>
+							<span>❤️ ${data.total_likes_received || 0} лайков</span>
+						</div>
+						<p>На сайте с: ${new Date(data.created_at).toLocaleDateString()}</p>
+						<a href="profile.html?username=${data.username}" class="btn">Перейти в профиль</a>
+					</div>
+				`
+			} catch (err) {
+				resultDiv.innerHTML = '<p class="error">Ошибка соединения</p>'
+			}
+		}
 
-        searchBtn.onclick = searchUser
-        searchInput.onkeypress = (e) => e.key === 'Enter' && searchUser()
+		searchBtn.onclick = searchUser
+		searchInput.onkeypress = (e) => {
+			if (e.key === 'Enter') searchUser()
+		}
 
-        document.getElementById('logoutBtn').onclick = () => {
-            localStorage.clear()
-            location.href = '/'
-        }
-    </script>
+		// ===== ТЁМНАЯ ТЕМА =====
+		function initTheme() {
+			const savedTheme = localStorage.getItem('theme')
+			if (savedTheme === 'dark') {
+				document.documentElement.classList.add('dark-theme')
+			}
+			
+			const themeBtn = document.getElementById('themeToggle')
+			if (themeBtn) {
+				const isDark = document.documentElement.classList.contains('dark-theme')
+				themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
+				
+				themeBtn.onclick = () => {
+					document.documentElement.classList.toggle('dark-theme')
+					const nowDark = document.documentElement.classList.contains('dark-theme')
+					localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+					themeBtn.textContent = nowDark ? '☀️ Светлая' : '🌙 Тёмная'
+				}
+			}
+		}
+
+		document.getElementById('logoutBtn').onclick = () => {
+			localStorage.clear()
+			location.href = '/'
+		}
+
+		initTheme()
+	</script>
 </body>
 </html>

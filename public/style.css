@@ -95,21 +95,89 @@ input, textarea {
 
 .post-header {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    justify-content: space-between;
     margin-bottom: 10px;
     color: #666;
+}
+
+.post-author-line {
+    display: flex;
+    flex-direction: column;  /* меняем на колонку */
+    align-items: flex-start;
+    gap: 5px;
+    flex: 1;
+}
+
+.post-author-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
 .post-author {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     text-decoration: none;
     color: inherit;
     font-weight: bold;
 }
 
-.post-author:hover {
-    text-decoration: underline;
+.post-date {
+    font-size: 12px;
+    color: #999;
+}
+.subscribe-row {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.subscribe-btn-inline {
+    background: none;
+    border: 1px solid #0070f3;
+    color: #0070f3;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: normal;
+    display: inline-block;
+}
+
+.subscribe-btn-inline:hover {
+    background: #0070f3;
+    color: white;
+}
+
+.subscribe-btn-inline.subscribed {
+    background: #e6f0ff;
+    color: #0070f3;
+    border-color: #0070f3;
+}
+
+.subscribe-btn-inline.subscribed:hover {
+    background: #0070f3;
+    color: white;
+}
+
+/* Тёмная тема */
+html.dark-theme .subscribe-btn-inline {
+    border-color: #66aaff;
+    color: #66aaff;
+}
+
+html.dark-theme .subscribe-btn-inline:hover {
+    background: #66aaff;
+    color: #1a1a1a;
+}
+
+html.dark-theme .subscribe-btn-inline.subscribed {
+    background: #1a2a3a;
+    color: #66aaff;
+    border-color: #66aaff;
 }
 
 .post-content {
@@ -520,4 +588,424 @@ html.dark-theme .views-count {
     color: #ffffff !important;  /* ярко-белый */
     font-weight: 500;  /* немного жирнее */
     text-shadow: 0 0 5px rgba(255,255,255,0.3);  /* лёгкое свечение */
+}
+html.dark-theme {
+    background: #0a0a0a;
+    min-height: 100%;
+}
+
+html.dark-theme body {
+    background: #0a0a0a;
+    color: #ffffff;  /* базовый белый текст */
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Контейнер */
+html.dark-theme .container {
+    background: #2d2d2d;
+    color: #ffffff;  /* весь текст в контейнере белый */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+/* Заголовки */
+html.dark-theme h1,
+html.dark-theme h2,
+html.dark-theme h3,
+html.dark-theme h4,
+html.dark-theme h5,
+html.dark-theme h6 {
+    color: #ffffff;
+}
+
+/* Тексты */
+html.dark-theme p,
+html.dark-theme span,
+html.dark-theme div,
+html.dark-theme li,
+html.dark-theme a:not(.btn) {
+    color: #ffffff;
+}
+
+/* Посты */
+html.dark-theme .post {
+    border-bottom-color: #444;
+}
+
+html.dark-theme .post-header {
+    color: #ffffff;  /* дата и автор */
+}
+
+html.dark-theme .post-author {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+html.dark-theme .post-content {
+    color: #ffffff;
+}
+
+/* Статистика и счётчики (кроме просмотров) */
+html.dark-theme .stats-header,
+html.dark-theme .user-counter {
+    background: #3d3d3d;
+    color: #ffffff;
+}
+
+html.dark-theme .user-counter span {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+html.dark-theme .stat-value {
+    color: #ffffff;
+}
+
+html.dark-theme .stat-label {
+    color: #dddddd;
+}
+
+/* Фильтры */
+html.dark-theme .filter-btn {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #ffffff;
+}
+
+html.dark-theme .filter-btn.active {
+    background: #0070f3;
+    color: white;
+}
+
+/* Уведомления */
+html.dark-theme .notification {
+    background: #3d3d3d;
+    border-bottom-color: #555;
+    color: #ffffff;
+}
+
+html.dark-theme .notification.unread {
+    background: #1a2a3a;
+}
+
+html.dark-theme .notification-content {
+    color: #ffffff;
+}
+
+html.dark-theme .notification-time {
+    color: #cccccc;
+}
+
+/* Поля ввода */
+html.dark-theme input,
+html.dark-theme textarea {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #ffffff;
+}
+
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder {
+    color: #aaaaaa;
+}
+
+/* Кнопки */
+html.dark-theme .btn {
+    background: #0070f3;
+    color: white;
+}
+
+html.dark-theme .btn:hover {
+    background: #0051b3;
+}
+
+/* Ссылки (не кнопки) */
+html.dark-theme a:not(.btn) {
+    color: #66aaff;
+}
+
+html.dark-theme a:not(.btn):hover {
+    color: #99ccff;
+}
+
+/* Ошибки и успех */
+html.dark-theme .error {
+    background: #441111;
+    color: #ffaaaa;
+}
+
+html.dark-theme .success {
+    background: #113311;
+    color: #aaffaa;
+}
+
+/* ===== ПРОСМОТРЫ ОСТАВЛЯЕМ ЯРКО-БЕЛЫМИ (КАК ПРОСИЛ РАНЬШЕ) ===== */
+html.dark-theme .views-count {
+    color: #ffffff !important;
+    font-weight: bold;
+}
+
+/* Лайки тоже делаем белыми (но лайкнутые — красными) */
+html.dark-theme .like-btn {
+    color: #ffffff;
+}
+
+html.dark-theme .like-btn.liked {
+    color: #ff8888;
+}
+html.dark-theme .like-btn {
+    color: #ffffff;
+    transition: color 0.2s;
+}
+
+html.dark-theme .like-btn:hover {
+    color: #ff8888;
+}
+
+html.dark-theme .like-btn.liked {
+    color: #ff4444 !important;  /* ярко-красный для лайкнутых */
+}
+
+/* Счётчик лайков внутри кнопки */
+html.dark-theme .like-btn .likes-count {
+    color: inherit;  /* наследует цвет кнопки */
+}
+html.dark-theme .user-card {
+    background: #2d2d2d;
+    border: 1px solid #444;
+    color: #ffffff;
+}
+
+html.dark-theme .user-card h3 {
+    color: #ffffff;
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+html.dark-theme .user-card .user-stats {
+    border-top: 1px solid #444;
+    border-bottom: 1px solid #444;
+    color: #dddddd;
+}
+
+html.dark-theme .user-card .user-stats span {
+    color: #ffffff;
+}
+
+html.dark-theme .user-card p {
+    color: #cccccc;
+}
+
+html.dark-theme .user-card .btn {
+    background: #0070f3;
+    color: white;
+}
+
+html.dark-theme .user-card .btn:hover {
+    background: #0051b3;
+}
+html.dark-theme .admin-badge {
+    color: #66aaff;  /* ярко-синий, а не белый */
+    background: #1a2a3a;
+    border: 1px solid #3a5a8a;
+}
+.load-more-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+.load-more-btn {
+    min-width: 200px;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.load-more-btn:hover {
+    background: #e0e0e0;
+}
+
+.spinner {
+    color: #666;
+    font-size: 14px;
+    padding: 10px;
+}
+
+/* Тёмная тема */
+html.dark-theme .load-more-btn {
+    background: #3d3d3d;
+    color: #fff;
+    border-color: #555;
+}
+
+html.dark-theme .load-more-btn:hover {
+    background: #4d4d4d;
+}
+
+html.dark-theme .spinner {
+    color: #aaa;
+}
+.bio-container {
+    margin: 30px 0;
+    padding: 20px 0;
+    border-top: 2px solid #eee;
+    border-bottom: 2px solid #eee;
+}
+
+.bio-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding: 10px 0;
+}
+
+.bio-empty {
+    color: #999;
+    font-style: italic;
+}
+
+.edit-bio-btn {
+    margin-top: 15px;
+    font-size: 14px;
+    padding: 5px 15px;
+}
+
+.bio-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 15px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    resize: vertical;
+    font-family: inherit;
+    margin-bottom: 5px;
+}
+
+.bio-input:focus {
+    outline: none;
+    border-color: #0070f3;
+}
+
+.char-counter-bio {
+    text-align: right;
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.bio-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-small {
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+html.dark-theme .bio-text {
+    color: #f0f0f0;
+}
+
+html.dark-theme .bio-empty {
+    color: #777;
+}
+
+html.dark-theme .bio-container {
+    border-top-color: #444;
+    border-bottom-color: #444;
+}
+
+html.dark-theme .bio-input {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #f0f0f0;
+}
+
+html.dark-theme .bio-input:focus {
+    border-color: #66aaff;
+}
+
+html.dark-theme .char-counter-bio {
+    color: #aaa;
+}
+/* ===== КНОПКА ПОДПИСКИ В ЛЕНТЕ ===== */
+.post-author-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.subscribe-btn-inline {
+    background: none;
+    border: 1px solid #0070f3;
+    color: #0070f3;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: normal;
+}
+
+.subscribe-btn-inline:hover {
+    background: #0070f3;
+    color: white;
+}
+
+.subscribe-btn-inline.subscribed {
+    background: #e6f0ff;
+    color: #0070f3;
+    border-color: #0070f3;
+}
+
+.subscribe-btn-inline.subscribed:hover {
+    background: #0070f3;
+    color: white;
+}
+
+.subscribe-btn-inline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+html.dark-theme .subscribe-btn-inline {
+    border-color: #66aaff;
+    color: #66aaff;
+    background: transparent;
+}
+
+html.dark-theme .subscribe-btn-inline:hover {
+    background: #66aaff;
+    color: #1a1a1a;
+}
+
+html.dark-theme .subscribe-btn-inline.subscribed {
+    background: #1a2a3a;
+    color: #66aaff;
+    border-color: #66aaff;
+}
+
+html.dark-theme .subscribe-btn-inline.subscribed:hover {
+    background: #66aaff;
+    color: #1a1a1a;
 }

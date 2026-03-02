@@ -9,72 +9,85 @@ export default async function handler(req, res) {
     // ПОЛУЧИТЬ ЛЕНТУ
     // =========================================
     if (action === 'feed') {
-      const currentUserId = req.body.userId
-      const filterType = req.body.filter || 'all'
+	  const currentUserId = req.body.userId
+	  const filterType = req.body.filter || 'all'
+	  const limit = req.body.limit || 8  // сколько постов загружаем
+	  const offset = req.body.offset || 0 // сколько уже пропустили
 
-      let query = supabase
-        .from('posts')
-        .select('*, users(id, username, is_admin)')
-        .order('created_at', { ascending: false })
+	  let query = supabase
+		.from('posts')
+		.select('*, users(id, username, is_admin)', { count: 'exact' }) // добавляем count
+		.order('created_at', { ascending: false })
+		.range(offset, offset + limit - 1) // пагинация через range
 
-      if (filterType === 'subscriptions' && currentUserId) {
-        const { data: subs } = await supabase
-          .from('subscriptions')
-          .select('following_id')
-          .eq('follower_id', currentUserId)
+	  if (filterType === 'subscriptions' && currentUserId) {
+		const { data: subs } = await supabase
+		  .from('subscriptions')
+		  .select('following_id')
+		  .eq('follower_id', currentUserId)
 
-        if (subs?.length) {
-          query = query.in('user_id', subs.map(s => s.following_id))
-        } else {
-          return res.status(200).json([])
-        }
-      }
+		if (subs?.length) {
+		  query = query.in('user_id', subs.map(s => s.following_id))
+		} else {
+		  return res.status(200).json({ posts: [], total: 0 })
+		}
+	  }
 
-      const { data: posts, error } = await query
+	  const { data: posts, error, count } = await query
 
-      if (error) {
-        return res.status(200).json({ error: error.message })
-      }
+	  if (error) {
+		return res.status(200).json({ error: error.message })
+	  }
 
-      // Получаем просмотренные посты
-      if (currentUserId) {
-        const { data: views } = await supabase
-          .from('post_views')
-          .select('post_id')
-          .eq('user_id', currentUserId)
+	  // Получаем просмотренные посты
+	  if (currentUserId) {
+		const { data: views } = await supabase
+		  .from('post_views')
+		  .select('post_id')
+		  .eq('user_id', currentUserId)
 
-        const viewedPostIds = new Set(views?.map(v => v.post_id) || [])
+		const viewedPostIds = new Set(views?.map(v => v.post_id) || [])
 
-        // Начисляем просмотры за новые посты
-        for (const post of posts) {
-          if (post.user_id !== parseInt(currentUserId) && !viewedPostIds.has(post.id)) {
-            await supabase
-              .from('post_views')
-              .insert([{ user_id: currentUserId, post_id: post.id }])
+		// Начисляем просмотры за новые посты
+		for (const post of posts) {
+		  if (post.user_id !== parseInt(currentUserId) && !viewedPostIds.has(post.id)) {
+			await supabase
+			  .from('post_views')
+			  .insert([{ user_id: currentUserId, post_id: post.id }])
 
-            await supabase.rpc('increment_post_views', { post_id: post.id })
-            post.views_count = (post.views_count || 0) + 1
-          }
-        }
-      }
+			await supabase.rpc('increment_post_views', { post_id: post.id })
+			post.views_count = (post.views_count || 0) + 1
+		  }
+		}
+	  }
 
-      // Проверяем лайки
-      if (currentUserId) {
-        const { data: userLikes } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('user_id', currentUserId)
+	  // Проверяем лайки
+	  if (currentUserId) {
+		const { data: userLikes } = await supabase
+		  .from('likes')
+		  .select('post_id')
+		  .eq('user_id', currentUserId)
 
-        const likedPostIds = new Set(userLikes?.map(l => l.post_id) || [])
+		const likedPostIds = new Set(userLikes?.map(l => l.post_id) || [])
 
-        return res.status(200).json(posts.map(post => ({
-          ...post,
-          isLiked: likedPostIds.has(post.id)
-        })))
-      }
+		const postsWithLikes = posts.map(post => ({
+		  ...post,
+		  isLiked: likedPostIds.has(post.id)
+		}))
 
-      return res.status(200).json(posts)
-    }
+		return res.status(200).json({
+		  posts: postsWithLikes,
+		  total: count,
+		  hasMore: offset + limit < count
+		})
+	  }
+
+	  return res.status(200).json({
+		posts: posts,
+		total: count,
+		hasMore: offset + limit < count
+	  })
+	}
 
     // =========================================
     // СОЗДАТЬ ПОСТ
