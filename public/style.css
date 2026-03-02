@@ -1009,3 +1009,22 @@ html.dark-theme .subscribe-btn-inline.subscribed:hover {
     background: #66aaff;
     color: #1a1a1a;
 }
+html.dark-theme .char-counter {
+    background: #3d3d3d;
+    color: #ffffff;
+    border: 1px solid #555;
+}
+
+html.dark-theme .char-counter span {
+    color: #66aaff;
+    font-weight: bold;
+}
+
+/* Если счётчик меняет цвет при приближении к лимиту */
+html.dark-theme .char-counter.warning {
+    color: #ffaa00;
+}
+
+html.dark-theme .char-counter.danger {
+    color: #ff4444;
+}
