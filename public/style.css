@@ -1028,3 +1028,20 @@ html.dark-theme .char-counter.warning {
 html.dark-theme .char-counter.danger {
     color: #ff4444;
 }
+/* ===== ПЛЕЙСХОЛДЕР В ТЁМНОЙ ТЕМЕ ===== */
+html.dark-theme .post-input::placeholder {
+    color: #aaaaaa;
+    opacity: 1;
+}
+
+html.dark-theme .bio-input::placeholder {
+    color: #aaaaaa;
+    opacity: 1;
+}
+
+/* Для всех полей ввода */
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder {
+    color: #aaaaaa;
+    opacity: 1;
+}
