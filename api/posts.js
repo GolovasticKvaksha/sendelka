@@ -279,7 +279,150 @@ export default async function handler(req, res) {
 	  return res.status(200).json({ success: true })
 	  
     }
+	// =========================================
+	// ПОЛУЧИТЬ КОММЕНТАРИИ К ПОСТУ (С ПАГИНАЦИЕЙ)
+	// =========================================
+	if (action === 'get_comments') {
+		const { postId, offset = 0, limit = 8 } = req.body
+		
+		if (!postId) {
+			return res.status(200).json({ error: 'ID поста не указан' })
+		}
 
+		const { data, error, count } = await supabase
+			.from('comments')
+			.select(`
+				*,
+				users (id, username, is_admin)
+			`, { count: 'exact' })
+			.eq('post_id', postId)
+			.order('created_at', { ascending: true })
+			.range(offset, offset + limit - 1)
+
+		if (error) {
+			return res.status(200).json({ error: error.message })
+		}
+
+		return res.status(200).json({ 
+			comments: data || [],
+			total: count,
+			hasMore: offset + limit < count
+		})
+	}
+	// =========================================
+	// ДОБАВИТЬ КОММЕНТАРИЙ
+	// =========================================
+	if (action === 'add_comment') {
+		const token = getTokenFromHeader(req.headers.authorization)
+		const userId = verifyToken(token)
+
+		if (!userId) {
+			return res.status(200).json({ error: 'Не авторизован' })
+		}
+
+		const { postId, content } = req.body
+
+		if (!postId) {
+			return res.status(200).json({ error: 'ID поста не указан' })
+		}
+
+		if (!content || !content.trim()) {
+			return res.status(200).json({ error: 'Комментарий не может быть пустым' })
+		}
+
+		if (content.length > 200) {
+			return res.status(200).json({ error: 'Максимум 200 символов' })
+		}
+
+		// АНТИСПАМ: проверяем количество комментариев за последние 4 минуты
+		const fourMinutesAgo = new Date(Date.now() - 4 * 60 * 1000).toISOString()
+		
+		const { count, error: countError } = await supabase
+			.from('comments')
+			.select('*', { count: 'exact', head: true })
+			.eq('user_id', userId)
+			.gte('created_at', fourMinutesAgo)
+
+		if (countError) {
+			return res.status(200).json({ error: 'Ошибка проверки антиспама' })
+		}
+
+		if (count >= 3) {
+			return res.status(200).json({ error: 'Слишком часто! Подожди немного перед новым комментарием.' })
+		}
+
+		// Добавляем комментарий
+		const { data, error } = await supabase
+			.from('comments')
+			.insert([{
+				post_id: postId,
+				user_id: userId,
+				content: content.trim()
+			}])
+			.select('*, users(id, username, is_admin)')
+
+		if (error) {
+			return res.status(200).json({ error: error.message })
+		}
+
+		return res.status(200).json({ comment: data[0] })
+	}
+	// =========================================
+	// УДАЛИТЬ КОММЕНТАРИЙ
+	// =========================================
+	if (action === 'delete_comment') {
+		const token = getTokenFromHeader(req.headers.authorization)
+		const userId = verifyToken(token)
+
+		if (!userId) {
+			return res.status(200).json({ error: 'Не авторизован' })
+		}
+
+		const { commentId } = req.body
+
+		if (!commentId) {
+			return res.status(200).json({ error: 'ID комментария не указан' })
+		}
+
+		// Получаем информацию о комментарии
+		const { data: comment, error: commentError } = await supabase
+			.from('comments')
+			.select('user_id')
+			.eq('id', commentId)
+			.single()
+
+		if (commentError || !comment) {
+			return res.status(200).json({ error: 'Комментарий не найден' })
+		}
+
+		// Проверяем, является ли пользователь админом
+		const { data: user } = await supabase
+			.from('users')
+			.select('is_admin')
+			.eq('id', userId)
+			.single()
+
+		const isAdmin = user?.is_admin || false
+
+		// Разрешаем удаление если:
+		// 1. Пользователь - автор комментария
+		// 2. ИЛИ пользователь - админ
+		if (comment.user_id !== userId && !isAdmin) {
+			return res.status(200).json({ error: 'Недостаточно прав' })
+		}
+
+		// Удаляем комментарий
+		const { error } = await supabase
+			.from('comments')
+			.delete()
+			.eq('id', commentId)
+
+		if (error) {
+			return res.status(200).json({ error: error.message })
+		}
+
+		return res.status(200).json({ success: true })
+	}
     return res.status(200).json({ error: 'Unknown action' })
 
   } catch (err) {

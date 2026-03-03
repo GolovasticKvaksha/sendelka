@@ -1122,3 +1122,481 @@ html.dark-theme .photo-input {
 html.dark-theme .post-img {
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
+/*тут закончить удаление*/
+.post-comments {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.comments-list {
+    margin-bottom: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.comment {
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #666;
+}
+
+.comment-author {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.comment-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+    word-wrap: break-word;
+}
+
+.add-comment {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #0070f3;
+}
+
+.comment-btn {
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: #0070f3;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.delete-comment-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: auto;
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.delete-comment-btn:hover {
+    opacity: 1;
+}
+
+.no-comments {
+    color: #999;
+    font-style: italic;
+    padding: 10px;
+    text-align: center;
+}
+
+.post-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.comments-count {
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+/* ===== ТЁМНАЯ ТЕМА ===== */
+html.dark-theme .post-comments {
+    border-top-color: #444;
+}
+
+html.dark-theme .comment {
+    background: #3d3d3d;
+}
+
+html.dark-theme .comment-header {
+    color: #aaa;
+}
+
+html.dark-theme .comment-author {
+    color: #f0f0f0;
+}
+
+html.dark-theme .comment-content {
+    color: #e0e0e0;
+}
+
+html.dark-theme .comment-input {
+    background: #2d2d2d;
+    border-color: #555;
+    color: #fff;
+}
+
+html.dark-theme .comment-input::placeholder {
+    color: #888;
+}
+
+html.dark-theme .comments-count {
+    color: #aaa;
+}
+
+html.dark-theme .no-comments {
+    color: #777;
+}
+/* ===== КОММЕНТАРИИ С ПАГИНАЦИЕЙ ===== */
+.comments-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.comments-btn:hover {
+    color: #0070f3;
+}
+
+.comments-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.comments-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.comment {
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: #666;
+    flex-wrap: wrap;
+}
+
+.comment-author {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.comment-content {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+    word-wrap: break-word;
+}
+
+.load-more-comments {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.load-more-comments-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+    font-size: 13px;
+}
+
+.add-comment {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #0070f3;
+}
+
+.comment-btn {
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: #0070f3;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.delete-comment-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: auto;
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.delete-comment-btn:hover {
+    opacity: 1;
+}
+
+.no-comments {
+    color: #999;
+    font-style: italic;
+    padding: 10px;
+    text-align: center;
+}
+
+/* ТЁМНАЯ ТЕМА */
+html.dark-theme .comments-btn {
+    color: #aaa;
+}
+
+html.dark-theme .comments-btn:hover {
+    color: #66aaff;
+}
+
+html.dark-theme .comments-container {
+    border-top-color: #444;
+}
+
+html.dark-theme .comment {
+    background: #3d3d3d;
+}
+
+html.dark-theme .comment-header {
+    color: #aaa;
+}
+
+html.dark-theme .comment-author {
+    color: #f0f0f0;
+}
+
+html.dark-theme .comment-content {
+    color: #e0e0e0;
+}
+
+html.dark-theme .load-more-comments-btn {
+    background: #3d3d3d;
+    color: #fff;
+    border-color: #555;
+}
+
+html.dark-theme .comment-input {
+    background: #2d2d2d;
+    border-color: #555;
+    color: #fff;
+}
+
+html.dark-theme .no-comments {
+    color: #777;
+}
+/* ===== ПРАВИЛА (АФЕРТА) ===== */
+.rules-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.rules-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+.rules-btn:hover {
+    background: #e0e0e0;
+}
+
+.rules-modal {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    z-index: 1000;
+}
+
+.rules-content {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.rules-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #0070f3;
+    color: white;
+}
+
+.rules-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.btn-close:hover {
+    opacity: 0.8;
+}
+
+.rules-body {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: white;
+    color: #333;
+    line-height: 1.6;
+}
+
+.rules-body p {
+    margin: 10px 0;
+}
+
+/* Тёмная тема */
+html.dark-theme .rules-btn {
+    background: #3d3d3d;
+    color: #fff;
+    border-color: #555;
+}
+
+html.dark-theme .rules-content {
+    background: #2d2d2d;
+}
+
+html.dark-theme .rules-body {
+    background: #2d2d2d;
+    color: #f0f0f0;
+}
+.rules-section {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.rules-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    padding: 8px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.rules-btn:hover {
+    background: #e0e0e0;
+}
+
+.rules-text {
+    margin-top: 15px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    border-left: 4px solid #0070f3;
+    line-height: 1.6;
+}
+
+.rules-text h3 {
+    color: #0070f3;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.rules-text p {
+    margin: 8px 0;
+    color: #333;
+}
+
+.rules-footer-note {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px dashed #ccc;
+    font-style: italic;
+    color: #666;
+    text-align: center;
+}
+
+/* Тёмная тема */
+html.dark-theme .rules-btn {
+    background: #3d3d3d;
+    color: #fff;
+    border-color: #555;
+}
+
+html.dark-theme .rules-btn:hover {
+    background: #4d4d4d;
+}
+
+html.dark-theme .rules-text {
+    background: #2d2d2d;
+    border-left-color: #66aaff;
+}
+
+html.dark-theme .rules-text h3 {
+    color: #66aaff;
+}
+
+html.dark-theme .rules-text p {
+    color: #f0f0f0;
+}
+
+html.dark-theme .rules-footer-note {
+    color: #aaa;
+    border-top-color: #444;
+}

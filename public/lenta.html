@@ -51,13 +51,24 @@
     <script>
         const token = localStorage.getItem('token')
         const user = JSON.parse(localStorage.getItem('user') || '{}')
-        
+		
+		// Хранилище offset для комментариев
+		let commentsOffset = {}
+
         if (!token) location.href = '/login.html'
 
         let currentFilter = 'all'
         let currentOffset = 0
         let hasMore = true
         let isLoading = false
+		
+		window.handleDeleteComment = function(e) {
+			e.preventDefault()
+			e.stopPropagation()
+			const commentId = e.currentTarget.dataset.commentId
+			const postId = e.currentTarget.dataset.postId
+			window.deleteComment(commentId, postId)
+		}
 
         async function loadPosts(reset = false) {
 			if (isLoading) return
@@ -139,10 +150,21 @@
 				currentOffset += 8
 				document.getElementById('loadMoreBtn').style.display = hasMore ? 'block' : 'none'
 				
+				posts.forEach(post => {
+					loadComments(post.id, `comments-${post.id}`)
+				})
 				// Добавляем обработчики для всех кнопок
 				document.querySelectorAll('.like-btn').forEach(btn => btn.addEventListener('click', likePost))
 				document.querySelectorAll('.delete-post-btn').forEach(btn => btn.addEventListener('click', deletePost))
 				document.querySelectorAll('.subscribe-btn-inline').forEach(btn => btn.addEventListener('click', subscribeFromFeed))
+				// Добавляем обработчики для удаления комментариев
+				// После добавления комментариев в DOM
+				document.querySelectorAll('.delete-comment-btn').forEach(btn => {
+					btn.addEventListener('click', (e) => {
+						btn.removeEventListener('click', handleDeleteComment) // убираем старый
+						btn.addEventListener('click', handleDeleteComment)
+					})
+				})
 				
 			} catch (err) {
 				console.error('Ошибка загрузки:', err)
@@ -158,7 +180,6 @@
 				const subscribeBtnText = post.isSubscribed ? '✓ Подписан' : '+ Подписаться'
 				const subscribeBtnClass = post.isSubscribed ? 'subscribe-btn-inline subscribed' : 'subscribe-btn-inline'
 				
-				// Добавляем блок с фото, если есть
 				const photoHtml = post.image_url ? `
 					<div class="post-image">
 						<img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
@@ -189,13 +210,40 @@
 								<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
 							` : ''}
 						</div>
+						
 						<div class="post-content">${post.content}</div>
 						${photoHtml}
+						
 						<div class="post-actions">
 							<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
 								❤️ <span class="likes-count">${post.likes_count || 0}</span>
 							</button>
 							<span class="views-count">👁️ ${post.views_count || 0}</span>
+							<button class="comments-btn" id="show-comments-btn-${post.id}" 
+									onclick="toggleComments(${post.id})">
+								💬 <span id="comments-count-${post.id}">${post.comments_count || 0}</span>
+							</button>
+						</div>
+						
+						<!-- БЛОК КОММЕНТАРИЕВ (ИЗНАЧАЛЬНО СКРЫТ) -->
+						<div id="comments-container-${post.id}" class="comments-container" style="display: none;">
+							<div id="comments-list-${post.id}" class="comments-list"></div>
+							
+							<div class="load-more-comments" id="load-more-comments-${post.id}" style="display: none;">
+								<button class="btn load-more-comments-btn" 
+										onclick="loadComments(${post.id})">
+									Ещё комментарии
+								</button>
+							</div>
+							
+							<div class="add-comment">
+								<input type="text" 
+									   id="comment-input-${post.id}" 
+									   class="comment-input" 
+									   placeholder="Написать комментарий... (до 200 символов)"
+									   maxlength="200">
+								<button class="btn comment-btn" onclick="addComment(${post.id})">➤</button>
+							</div>
 						</div>
 					</div>
 				`
@@ -355,6 +403,217 @@
                 console.error('Ошибка счетчика:', err)
             }
         }
+		async function toggleComments(postId) {
+			console.log('toggleComments called for post:', postId)
+			
+			const container = document.getElementById(`comments-container-${postId}`)
+			const btn = document.getElementById(`show-comments-btn-${postId}`)
+			
+			console.log('container:', container)
+			console.log('btn:', btn)
+			
+			if (!container || !btn) {
+				console.error('Элементы не найдены для postId:', postId)
+				return
+			}
+			
+			if (container.style.display === 'none') {
+				container.style.display = 'block'
+				btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
+							   document.getElementById(`comments-count-${postId}`).textContent + 
+							   '</span> ↑'
+				
+				if (!commentsOffset[postId] && commentsOffset[postId] !== 0) {
+					commentsOffset[postId] = 0
+					await loadComments(postId, true)
+				}
+			} else {
+				container.style.display = 'none'
+				btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
+							   document.getElementById(`comments-count-${postId}`).textContent + 
+							   '</span>'
+			}
+		}
+
+		async function loadComments(postId, reset = false) {
+			if (reset) {
+				commentsOffset[postId] = 0
+				document.getElementById(`comments-list-${postId}`).innerHTML = ''
+				document.getElementById(`load-more-comments-${postId}`).style.display = 'block'
+			}
+			
+			try {
+				const res = await fetch('/api/posts', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'get_comments',
+						postId: postId,
+						offset: commentsOffset[postId] || 0,
+						limit: 8
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error) {
+					renderComments(postId, data.comments || [], reset)
+					
+					if (data.hasMore) {
+						commentsOffset[postId] = (commentsOffset[postId] || 0) + 8
+						document.getElementById(`load-more-comments-${postId}`).style.display = 'block'
+					} else {
+						document.getElementById(`load-more-comments-${postId}`).style.display = 'none'
+					}
+				}
+			} catch (err) {
+				console.error('Ошибка загрузки комментариев:', err)
+			}
+		}
+
+		function renderComments(postId, comments, reset = false) {
+			const list = document.getElementById(`comments-list-${postId}`)
+			
+			if (reset) {
+				list.innerHTML = ''
+			}
+			
+			if (comments.length === 0 && reset) {
+				list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'
+				return
+			}
+			
+			comments.forEach(comment => {
+				const commentHtml = `
+					<div class="comment" data-comment-id="${comment.id}">
+						<div class="comment-header">
+							<a href="profile.html?username=${comment.users?.username}" class="comment-author">
+								<strong>@${comment.users?.username}</strong>
+								${comment.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+							</a>
+							<small>${new Date(comment.created_at).toLocaleString()}</small>
+							${(user.is_admin || comment.user_id === user.id) ? `
+								<button class="delete-comment-btn" data-comment-id="${comment.id}" data-post-id="${postId}">🗑️</button>
+							` : ''}
+						</div>
+						<div class="comment-content">${comment.content}</div>
+					</div>
+				`
+				list.insertAdjacentHTML('beforeend', commentHtml)
+			})
+			
+			list.querySelectorAll('.delete-comment-btn').forEach(btn => {
+				btn.addEventListener('click', (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					const commentId = e.currentTarget.dataset.commentId
+					const postId = e.currentTarget.dataset.postId
+					window.deleteComment(commentId, postId)
+				})
+			})
+		}
+		
+		
+
+		async function addComment(postId) {
+			const input = document.getElementById(`comment-input-${postId}`)
+			const content = input.value.trim()
+			
+			if (!content) return
+			
+			if (content.length > 200) {
+				alert('Максимум 200 символов')
+				return
+			}
+			
+			const res = await fetch('/api/posts', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'add_comment',
+					postId: postId,
+					content: content
+				})
+			})
+			
+			const data = await res.json()
+			
+			if (!data.error) {
+				input.value = ''
+				// Перезагружаем комментарии сбросом
+				await loadComments(postId, true)
+				
+				// Увеличиваем счётчик
+				const countSpan = document.getElementById(`comments-count-${postId}`)
+				if (countSpan) {
+					countSpan.textContent = parseInt(countSpan.textContent) + 1
+				}
+			} else {
+				alert('Ошибка: ' + data.error)
+			}
+		}
+		
+		window.deleteComment = async function(commentId, postId) {
+			if (!confirm('Удалить комментарий?')) return
+			
+			try {
+				const res = await fetch('/api/posts', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						action: 'delete_comment',
+						commentId: commentId
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (data.success) {
+					// Находим и удаляем комментарий из DOM
+					const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`)
+					if (commentElement) {
+						commentElement.remove()
+					}
+					
+					// Обновляем счётчик
+					const countSpan = document.getElementById(`comments-count-${postId}`)
+					if (countSpan) {
+						const newCount = parseInt(countSpan.textContent) - 1
+						countSpan.textContent = newCount
+						
+						// Обновляем кнопку
+						const btn = document.getElementById(`show-comments-btn-${postId}`)
+						if (btn) {
+							btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + newCount + '</span> ↑'
+						}
+					}
+					
+					// Если комментариев не осталось, показываем "Пока нет комментариев"
+					const commentsList = document.getElementById(`comments-list-${postId}`)
+					if (commentsList && commentsList.children.length === 0) {
+						commentsList.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'
+					}
+				} else {
+					alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+				}
+			} catch (err) {
+				console.error('Ошибка удаления:', err)
+				alert('Ошибка соединения')
+			}
+		}
+		
+		// Делаем функции глобальными
+		window.toggleComments = toggleComments
+		window.loadComments = loadComments
+		window.addComment = addComment
+		window.deleteComment = deleteComment
+		
 
         // Добавляем обработчики событий после загрузки постов
         function addEventListeners() {

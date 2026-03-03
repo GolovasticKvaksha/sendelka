@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script>
-		(function() {
-			const savedTheme = localStorage.getItem('theme')
-			if (savedTheme === 'dark') {
-				document.documentElement.classList.add('dark-theme')
-			}
-		})()
-	</script>
     <title>Sendelka</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme')
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme')
+            }
+        })()
+    </script>
 </head>
 <body>
     <div class="container">
@@ -22,5 +22,47 @@
             <a href="lenta.html" class="btn">Лента</a>
         </div>
     </div>
+
+    <!-- КНОПКА ПРАВИЛ -->
+    <div class="rules-section">
+        <button id="toggleRulesBtn" class="btn rules-btn">📜 Правила</button>
+        
+        <!-- ТЕКСТ ПРАВИЛ (ИЗНАЧАЛЬНО СКРЫТ) -->
+        <div id="rulesText" class="rules-text" style="display: none;">
+            <h3>Привет, друг!!!</h3>
+			<h4>Здесь прописано всё, что тебе нужно знать заходя на сайт</h4>
+            <p>1. Весь контент модерируется</p>
+            <p>1.1. Администратор(у него галочка) может удалить и забанить пользователя без указания причины</p>
+            <p>1.2. Администратор придерживается моральных и эстетических норм при модерации</p>
+            <p></p>
+            <p>2. Авторское право</p>
+			<p>2.1. Весь контент(не относящиеся к пунтку 2.2), публикуемый в Sendelka может быть использован ЛЮБЫМИ лицами</p>
+			<p>2.2. Все посты с пометкой "#некрастьпж" фиксируются мозгом Администрации, и посты, использующие этот контент, могут быть удалены</p>
+			<p></p>
+			<p>3. Об аккаунтах</p>
+			<p>3.1. При регистрации собирается информация о пользователе(Ник, зашифрованный пароль, ip адрес)</p>
+			<p>3.2. НИКТО не имеет права разглашать информацию о пароле или ip адресе пользователя</p>
+            <p class="rules-footer-note">Данная информация является лишь предупреждением для пользователя</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggleRulesBtn')
+            const rulesText = document.getElementById('rulesText')
+            
+            if (toggleBtn) {
+                toggleBtn.onclick = () => {
+                    if (rulesText.style.display === 'none') {
+                        rulesText.style.display = 'block'
+                        toggleBtn.textContent = '📜 Скрыть'
+                    } else {
+                        rulesText.style.display = 'none'
+                        toggleBtn.textContent = '📜 Пользовательское соглашение'
+                    }
+                }
+            }
+        })
+    </script>
 </body>
 </html>
