@@ -1600,3 +1600,548 @@ html.dark-theme .rules-footer-note {
     color: #aaa;
     border-top-color: #444;
 }
+/* ===== ПОДСКАЗКА ДЛЯ РЕФЕРАЛА ===== */
+.field-note {
+    display: block;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Тёмная тема */
+html.dark-theme .field-note {
+    color: #aaa;
+}
+/* ===== АВАТАРКИ ===== */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.avatar-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #0070f3;
+}
+
+.btn-choose-avatar {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #0070f3;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Модальное окно аватарок */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.avatars-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 20px;
+}
+
+.avatar-option {
+    position: relative;
+    cursor: pointer;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.avatar-option:hover {
+    transform: scale(1.05);
+}
+
+.avatar-option.current {
+    border: 3px solid #0070f3;
+}
+
+.avatar-option.locked {
+    cursor: not-allowed;
+}
+
+.avatar-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.current-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #0070f3;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.lock-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+}
+
+.upload-section {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.upload-section h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.avatar-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Медали и статусы */
+.status-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f0f8ff;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
+.status-badge {
+    font-size: 24px;
+}
+
+.status-text {
+    color: #0070f3;
+    font-weight: 500;
+}
+
+.medals-panel {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 10px;
+}
+
+.medals-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 15px;
+}
+
+.medal-stat {
+    text-align: center;
+}
+
+.medal-icon {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.medal-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #0070f3;
+    display: block;
+}
+
+.medal-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Аватарка в ленте */
+.post-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Тёмная тема */
+html.dark-theme .modal-content {
+    background: #2d2d2d;
+}
+
+html.dark-theme .modal-header {
+    border-bottom-color: #444;
+}
+
+html.dark-theme .upload-section {
+    border-top-color: #444;
+}
+
+html.dark-theme .upload-section h4 {
+    color: #f0f0f0;
+}
+
+html.dark-theme .status-container {
+    background: #1a2a3a;
+}
+
+html.dark-theme .status-text {
+    color: #66aaff;
+}
+
+html.dark-theme .medals-panel {
+    background: #3d3d3d;
+}
+
+html.dark-theme .medal-label {
+    color: #aaa;
+}
+/* ===== ТОПЫ ===== */
+.top-categories {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.top-btn {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.top-btn.active {
+    background: #0070f3;
+    color: white;
+    border-color: #0070f3;
+}
+
+.top-list {
+    margin: 20px 0;
+}
+
+.top-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: transform 0.2s;
+}
+
+.top-item:hover {
+    transform: translateX(5px);
+}
+
+.top-item.top-1 {
+    background: linear-gradient(135deg, #fff9e6, #ffe4b5);
+    border: 1px solid gold;
+}
+
+.top-item.top-2 {
+    background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+    border: 1px solid silver;
+}
+
+.top-item.top-3 {
+    background: linear-gradient(135deg, #fdf5e6, #f0dbb4);
+    border: 1px solid #cd7f32;
+}
+
+.top-place {
+    font-size: 20px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+.top-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 15px;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.top-item.top-1 .top-avatar {
+    border-color: gold;
+}
+
+.top-item.top-2 .top-avatar {
+    border-color: silver;
+}
+
+.top-item.top-3 .top-avatar {
+    border-color: #cd7f32;
+}
+
+.top-username {
+    flex: 1;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.top-username:hover {
+    text-decoration: underline;
+    color: #0070f3;
+}
+
+.top-stat {
+    font-size: 16px;
+    color: #666;
+    min-width: 80px;
+    text-align: right;
+}
+
+.top-status {
+    margin-left: 15px;
+    padding: 3px 10px;
+    background: #0070f3;
+    color: white;
+    border-radius: 15px;
+    font-size: 12px;
+}
+
+/* Панель админа */
+.admin-season-panel {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.admin-season-panel h3 {
+    margin-bottom: 15px;
+    color: #856404;
+}
+
+.season-inputs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.season-inputs input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+/* Тёмная тема */
+html.dark-theme .top-btn {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #fff;
+}
+
+html.dark-theme .top-item {
+    background: #3d3d3d;
+}
+
+html.dark-theme .top-item.top-1 {
+    background: linear-gradient(135deg, #4d3f1a, #665522);
+}
+
+html.dark-theme .top-item.top-2 {
+    background: linear-gradient(135deg, #444444, #555555);
+}
+
+html.dark-theme .top-item.top-3 {
+    background: linear-gradient(135deg, #4d3322, #664422);
+}
+
+html.dark-theme .top-username {
+    color: #f0f0f0;
+}
+
+html.dark-theme .admin-season-panel {
+    background: #332e1a;
+    border-color: #665522;
+}
+
+html.dark-theme .admin-season-panel h3 {
+    color: #ffd966;
+}
+
+html.dark-theme .season-inputs input {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #fff;
+}
+/* ===== БАННЕР ПОБЕДИТЕЛЯ ===== */
+.winner-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, gold, #ffd700);
+    padding: 10px 20px;
+    border-radius: 50px;
+    margin: 15px 0;
+    box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+.winner-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+.winner-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+}
+
+.winner-label {
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+    background: rgba(255,255,255,0.3);
+    padding: 5px 15px;
+    border-radius: 25px;
+}
+
+/* Аватарки в комментариях */
+.comment-avatar {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Тёмная тема для баннера */
+html.dark-theme .winner-banner {
+    background: linear-gradient(135deg, #8b6f1c, #665511);
+}
+
+html.dark-theme .winner-link {
+    color: #f0f0f0;
+}
+
+html.dark-theme .winner-label {
+    background: rgba(0,0,0,0.3);
+    color: #f0f0f0;
+}
+.rank-badge {
+    text-align: center;
+    margin: 10px 0;
+    padding: 5px 15px;
+    background: #f0f0f0;
+    border-radius: 20px;
+    display: inline-block;
+    font-weight: bold;
+}
+
+html.dark-theme .rank-badge {
+    background: #3d3d3d;
+    color: #f0f0f0;
+}

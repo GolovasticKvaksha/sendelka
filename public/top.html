@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Топы | Sendelka</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme')
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme')
+            }
+        })()
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Топы Sendelka</h1>
+            <div class="nav-menu">
+                <a href="lenta.html" class="btn">Лента</a>
+                <a href="profile.html" class="btn">Профиль</a>
+                <a href="search.html" class="btn">Поиск</a>
+                <button id="themeToggle" class="btn">🌙 Тёмная</button>
+                <button id="logoutBtn" class="btn">Выйти</button>
+            </div>
+        </div>
+
+        <div class="top-categories">
+            <button id="topSubs" class="top-btn active">👥 Подписчики</button>
+            <button id="topPosts" class="top-btn">📝 Посты</button>
+            <button id="topMedals" class="top-btn">🏅 Медали</button>
+        </div>
+
+        <!-- ПАНЕЛЬ АДМИНА ДЛЯ СБРОСА СЕЗОНА -->
+        <div id="adminSeasonPanel" class="admin-season-panel" style="display: none;">
+            <h3>⚙️ Управление сезоном</h3>
+            <div class="season-inputs">
+                <input type="text" id="status4_10" placeholder="Статус для 4-10 мест" value="Участник сезона">
+                <input type="text" id="status2_3" placeholder="Статус для 2-3 мест" value="Призёр">
+                <input type="text" id="status1" placeholder="Статус для 1 места" value="Победитель">
+            </div>
+            <button id="resetSeasonBtn" class="btn btn-danger">🔄 Сбросить сезон</button>
+        </div>
+
+        <div id="topList" class="top-list"></div>
+        
+        <div class="load-more-container">
+            <button id="loadMoreTopBtn" class="btn load-more-btn">Ещё 10</button>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        if (!token) location.href = '/login.html'
+
+        let currentCategory = 'subscribers'
+        let currentOffset = 0
+        let hasMore = true
+
+        // Показываем панель админа если пользователь админ
+        if (user.is_admin) {
+            document.getElementById('adminSeasonPanel').style.display = 'block'
+        }
+
+        async function loadTop(reset = false) {
+            if (reset) {
+                currentOffset = 0
+                hasMore = true
+                document.getElementById('topList').innerHTML = ''
+            }
+
+            if (!hasMore) {
+                document.getElementById('loadMoreTopBtn').style.display = 'none'
+                return
+            }
+
+            const res = await fetch('/api/top', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get_top',
+                    category: currentCategory,
+                    limit: 10,
+                    offset: currentOffset
+                })
+            })
+
+            const data = await res.json()
+            
+            if (data.error) {
+                alert('Ошибка: ' + data.error)
+                return
+            }
+
+            const list = document.getElementById('topList')
+            
+            data.users.forEach((userItem, index) => {
+                const place = currentOffset + index + 1
+                let medalEmoji = ''
+                if (place === 1) medalEmoji = '🥇'
+                else if (place === 2) medalEmoji = '🥈'
+                else if (place === 3) medalEmoji = '🥉'
+                
+                list.innerHTML += `
+                    <div class="top-item ${place <= 3 ? 'top-' + place : ''}">
+                        <div class="top-place">
+                            ${medalEmoji || '#' + place}
+                        </div>
+                        <img src="${userItem.avatar?.startsWith('avatar') ? '/avatars/' + userItem.avatar : userItem.avatar || '/avatars/avatar1.jpg'}" 
+                             class="top-avatar" 
+                             onclick="location.href='profile.html?username=${userItem.username}'"
+                             onerror="this.src='/avatars/avatar1.jpg'">
+                        <a href="profile.html?username=${userItem.username}" class="top-username">
+                            @${userItem.username}
+                        </a>
+                        <div class="top-stat">
+                            ${currentCategory === 'subscribers' ? `👥 ${userItem.subscribers_count}` :
+                              currentCategory === 'posts' ? `📝 ${userItem.posts_count}` :
+                              `🏅 ${userItem.medals_count}`}
+                        </div>
+                        ${userItem.status_text ? `<div class="top-status">${userItem.status_text}</div>` : ''}
+                    </div>
+                `
+            })
+
+            hasMore = data.hasMore
+            document.getElementById('loadMoreTopBtn').style.display = hasMore ? 'block' : 'none'
+            currentOffset += 10
+        }
+
+        // ===== ПЕРЕКЛЮЧЕНИЕ КАТЕГОРИЙ =====
+        document.getElementById('topSubs').onclick = () => {
+            document.querySelectorAll('.top-btn').forEach(btn => btn.classList.remove('active'))
+            document.getElementById('topSubs').classList.add('active')
+            currentCategory = 'subscribers'
+            loadTop(true)
+        }
+
+        document.getElementById('topPosts').onclick = () => {
+            document.querySelectorAll('.top-btn').forEach(btn => btn.classList.remove('active'))
+            document.getElementById('topPosts').classList.add('active')
+            currentCategory = 'posts'
+            loadTop(true)
+        }
+
+        document.getElementById('topMedals').onclick = () => {
+            document.querySelectorAll('.top-btn').forEach(btn => btn.classList.remove('active'))
+            document.getElementById('topMedals').classList.add('active')
+            currentCategory = 'medals'
+            loadTop(true)
+        }
+
+        document.getElementById('loadMoreTopBtn').onclick = () => loadTop()
+
+        // ===== СБРОС СЕЗОНА (ТОЛЬКО АДМИН) =====
+        document.getElementById('resetSeasonBtn').onclick = async () => {
+            if (!confirm('⚠️ Сбросить сезон? Это действие необратимо!\n\nВсе текущие медали сезона будут обнулены, а победители получат статусы.')) return
+
+            const res = await fetch('/api/top', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'reset_season',
+                    status_4_10: document.getElementById('status4_10').value,
+                    status_2_3: document.getElementById('status2_3').value,
+                    status_1: document.getElementById('status1').value
+                })
+            })
+
+            const data = await res.json()
+            
+            if (data.success) {
+                alert('✅ Сезон сброшен! Победители получили статусы.')
+                loadTop(true)
+            } else {
+                alert('❌ Ошибка: ' + data.error)
+            }
+        }
+
+        // ===== ТЁМНАЯ ТЕМА =====
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            if (!themeBtn) return
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
+            
+            themeBtn.onclick = () => {
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeBtn.textContent = nowDark ? '☀️ Светлая' : '🌙 Тёмная'
+            }
+        }
+
+        document.getElementById('logoutBtn').onclick = () => {
+            localStorage.clear()
+            location.href = '/'
+        }
+
+        loadTop(true)
+        initTheme()
+    </script>
+</body>
+</html>

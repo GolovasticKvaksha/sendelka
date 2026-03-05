@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script>
-		(function() {
-			const savedTheme = localStorage.getItem('theme')
-			if (savedTheme === 'dark') {
-				document.documentElement.classList.add('dark-theme')
-			}
-		})()
-	</script>
     <title>Профиль | Sendelka</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme')
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme')
+            }
+        })()
+    </script>
 </head>
 <body>
     <div class="container">
@@ -20,28 +20,25 @@
                 <a href="lenta.html" class="btn">Лента</a>
                 <a href="create.html" class="btn">Новый пост</a>
                 <a href="search.html" class="btn">Поиск</a>
-				<button id="themeToggle" class="btn">🌙 Тёмная</button>
+                <a href="top.html" class="btn">🏆 Топы</a>
+                <button id="themeToggle" class="btn">🌙 Тёмная</button>
                 <button id="logoutBtn" class="btn">Выйти</button>
             </div>
         </div>
 
-        <div id="profileInfo" class="profile-info"></div>
-		<!-- БЛОК С ОПИСАНИЕМ -->
-		<div id="bioContainer" class="bio-container">
-			<div id="bioDisplay" class="bio-display"></div>
-			<div id="bioEdit" class="bio-edit" style="display: none;">
-				<textarea id="bioInput" class="bio-input" placeholder="Расскажите о себе..." maxlength="90"></textarea>
-				<div class="char-counter-bio">
-					<span id="bioCurrentChars">0</span>/90
-				</div>
-				<div class="bio-actions">
-					<button id="saveBioBtn" class="btn btn-small">Сохранить</button>
-					<button id="cancelBioBtn" class="btn btn-small btn-secondary">Отмена</button>
-				</div>
-			</div>
-		</div>
-        <div id="subscribeBtn" class="subscribe-section"></div>
+        <!-- АВАТАРКА И НИК -->
+        <div class="profile-header">
+            <div class="avatar-container">
+                <img id="profileAvatar" src="" alt="avatar" class="profile-avatar">
+                <button id="chooseAvatarBtn" class="btn-choose-avatar" style="display: none;">✏️</button>
+            </div>
+            <div class="profile-name">
+                <h2 id="profileUsername"></h2>
+                <span id="adminBadge" class="admin-badge" style="display: none;">✓</span>
+            </div>
+        </div>
 
+        <!-- СТАТИСТИКА -->
         <div class="stats">
             <div class="stat">
                 <span class="stat-value" id="postsCount">0</span>
@@ -54,6 +51,75 @@
             <div class="stat">
                 <span class="stat-value" id="likesCount">0</span>
                 <span class="stat-label">лайков</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="medalsCount">0</span>
+                <span class="stat-label">медалей</span>
+            </div>
+        </div>
+
+        <!-- СТАТУС (если есть) -->
+        <div id="statusContainer" class="status-container" style="display: none;">
+            <div class="status-badge">🏅</div>
+            <div id="statusText" class="status-text"></div>
+        </div>
+
+        <!-- КНОПКА ПОДПИСКИ -->
+        <div id="subscribeBtn" class="subscribe-section"></div>
+
+        <!-- ОПИСАНИЕ (BIO) -->
+        <div id="bioContainer" class="bio-container">
+            <div id="bioDisplay" class="bio-display"></div>
+            <div id="bioEdit" class="bio-edit" style="display: none;">
+                <textarea id="bioInput" class="bio-input" placeholder="Расскажите о себе..." maxlength="200"></textarea>
+                <div class="char-counter-bio">
+                    <span id="bioCurrentChars">0</span>/200
+                </div>
+                <div class="bio-actions">
+                    <button id="saveBioBtn" class="btn btn-small">Сохранить</button>
+                    <button id="cancelBioBtn" class="btn btn-small btn-secondary">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ МЕДАЛЕЙ (под описанием) -->
+        <div id="medalsPanel" class="medals-panel">
+            <div class="medals-stats">
+                <div class="medal-stat">
+                    <span class="medal-icon">🏅</span>
+                    <span class="medal-value" id="totalMedals">0</span>
+                    <span class="medal-label">всего</span>
+                </div>
+                <div class="medal-stat">
+                    <span class="medal-icon">📊</span>
+                    <span class="medal-value" id="currentRank">—</span>
+                    <span class="medal-label">место в топе</span>
+                </div>
+            </div>
+            <!-- КНОПКА УБРАТЬ ПРОФИЛЬ ПОБЕДИТЕЛЯ (только для топ-1) -->
+            <button id="hideWinnerBtn" class="btn btn-warning" style="display: none;">
+                🚫 Убрать профиль из ленты
+            </button>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ВЫБОРА АВАТАРКИ -->
+        <div id="avatarModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Выбери аватарку</h3>
+                    <button id="closeAvatarModal" class="btn-close">✖</button>
+                </div>
+                <div class="modal-body">
+                    <div class="avatars-grid" id="avatarsGrid"></div>
+                    
+                    <!-- БЛОК ЗАГРУЗКИ СВОЕЙ АВАТАРКИ -->
+                    <div id="uploadAvatarSection" class="upload-section" style="display: none;">
+                        <h4>Загрузить свою аватарку</h4>
+                        <input type="url" id="customAvatarUrl" class="avatar-input" 
+                               placeholder="Ссылка на изображение (jpg, png, gif)">
+                        <button id="uploadAvatarBtn" class="btn btn-primary">Загрузить</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -69,184 +135,307 @@
 
         const urlParams = new URLSearchParams(window.location.search)
         const username = urlParams.get('username') || currentUser.username
+        const isOwnProfile = currentUser.username === username
 
+        // ===== ЗАГРУЗКА ПРОФИЛЯ =====
         async function loadProfile() {
-			const res = await fetch('/api/user', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'profile',
-					username,
-					currentUserId: currentUser.id
-				})
-			})
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'profile',
+                    username,
+                    currentUserId: currentUser.id
+                })
+            })
 
-			const profile = await res.json()
+            const profile = await res.json()
 
-			if (profile.error) {
-				document.body.innerHTML = `<div class="container"><h1>Ошибка: ${profile.error}</h1><a href="lenta.html">Назад</a></div>`
-				return
-			}
+            if (profile.error) {
+                document.body.innerHTML = `<div class="container"><h1>Ошибка: ${profile.error}</h1><a href="lenta.html">Назад</a></div>`
+                return
+            }
 
-			window.profileId = profile.id
+            window.profileId = profile.id
 
-			document.getElementById('profileInfo').innerHTML = `
-				<h2>
-					@${profile.username}
-					${profile.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-				</h2>
-				<p>На сайте с: ${new Date(profile.created_at).toLocaleDateString()}</p>
-			`
+            // ===== АВАТАРКА =====
+            const avatarImg = document.getElementById('profileAvatar')
+            avatarImg.src = profile.avatar ? 
+                (profile.avatar.startsWith('avatar') ? `/avatars/${profile.avatar}` : profile.avatar) 
+                : '/avatars/avatar1.jpg'
+            avatarImg.onerror = () => { avatarImg.src = '/avatars/avatar1.jpg' }
 
-			document.getElementById('postsCount').textContent = profile.posts_count || 0
-			document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
-			document.getElementById('likesCount').textContent = profile.total_likes_received || 0
-			// ===== ОПИСАНИЕ ПРОФИЛЯ (BIO) =====
-			function renderBio(profile) {
-				const bioContainer = document.getElementById('bioContainer')
-				const bioDisplay = document.getElementById('bioDisplay')
-				const bioEdit = document.getElementById('bioEdit')
-				const bioInput = document.getElementById('bioInput')
-				const bioCounter = document.getElementById('bioCurrentChars')
-				
-				// Отображаем описание с отступами
-				if (profile.bio) {
-					bioDisplay.innerHTML = `
-						<div class="bio-text">${profile.bio.replace(/\n/g, '<br>')}</div>
-					`
-				} else {
-					bioDisplay.innerHTML = '<div class="bio-text bio-empty">Пока ничего не рассказал о себе</div>'
-				}
-				
-				// Если это свой профиль — показываем кнопку редактирования
-				if (currentUser.username === username) {
-					bioDisplay.innerHTML += '<button id="editBioBtn" class="btn btn-small edit-bio-btn">✏️ Редактировать</button>'
-					
-					document.getElementById('editBioBtn').onclick = () => {
-						bioDisplay.style.display = 'none'
-						bioEdit.style.display = 'block'
-						bioInput.value = profile.bio || ''
-						if (bioCounter) bioCounter.textContent = bioInput.value.length
-					}
-					
-					// Счётчик символов
-					if (bioInput) {
-						bioInput.addEventListener('input', () => {
-							if (bioCounter) bioCounter.textContent = bioInput.value.length
-						})
-					}
-					
-					document.getElementById('saveBioBtn').onclick = async () => {
-						const newBio = bioInput.value.trim()
-						
-						const res = await fetch('/api/user', {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-								'Authorization': `Bearer ${token}`
-							},
-							body: JSON.stringify({
-								action: 'update_bio',
-								bio: newBio
-							})
-						})
-						
-						const data = await res.json()
-						
-						if (data.success) {
-							profile.bio = newBio
-							bioDisplay.style.display = 'block'
-							bioEdit.style.display = 'none'
-							renderBio(profile)  // обновляем отображение
-						} else {
-							alert('Ошибка: ' + data.error)
-						}
-					}
-					
-					document.getElementById('cancelBioBtn').onclick = () => {
-						bioDisplay.style.display = 'block'
-						bioEdit.style.display = 'none'
-					}
-				}
-			}
+            // ===== НИК =====
+            document.getElementById('profileUsername').innerHTML = `@${profile.username}`
+            
+            if (profile.is_admin) {
+                document.getElementById('adminBadge').style.display = 'inline'
+            }
 
-			// Вызови эту функцию после загрузки профиля
-			renderBio(profile)
-			if (currentUser.username !== username) {
-				const btnText = profile.isSubscribed ? 'Отписаться' : 'Подписаться'
-				document.getElementById('subscribeBtn').innerHTML = `
-					<button id="subscribeBtnAction" class="btn">${btnText}</button>
-				`
-				document.getElementById('subscribeBtnAction').onclick = toggleSubscribe
-			} else {
-				document.getElementById('subscribeBtn').innerHTML = ''
-			}
+            // ===== СТАТИСТИКА =====
+            document.getElementById('postsCount').textContent = profile.posts_count || 0
+            document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
+            document.getElementById('likesCount').textContent = profile.total_likes_received || 0
+            document.getElementById('medalsCount').textContent = profile.medals_count || 0
 
-			const postsDiv = document.getElementById('posts')
-			if (profile.posts?.length) {
-				postsDiv.innerHTML = profile.posts.map(post => `
-					<div class="post" data-post-id="${post.id}">
-						<div class="post-header">
-							<strong>@${profile.username}</strong>
-							<small>${new Date(post.created_at).toLocaleString()}</small>
-							${(currentUser.is_admin || currentUser.id === post.user_id) ? `
-								<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
-							` : ''}
-						</div>
-						<div class="post-content">${post.content}</div>
-						${post.image_url ? `
-							<div class="post-image">
-								<img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
-							</div>
-						` : ''}
-						<div class="post-stats">
-							<span>❤️ ${post.likes_count || 0}</span>
-							<span>👁️ ${post.views_count || 0}</span>
-						</div>
-					</div>
-				`).join('')
-			} else {
-				postsDiv.innerHTML = '<p>У пользователя пока нет постов</p>'
-			}
+            // ===== МЕСТО В ТОПЕ =====
+            if (profile.season_rank) {
+                let medalEmoji = ''
+                if (profile.season_rank === 1) medalEmoji = '🥇'
+                else if (profile.season_rank === 2) medalEmoji = '🥈'
+                else if (profile.season_rank === 3) medalEmoji = '🥉'
+                
+                const profileInfo = document.getElementById('profileInfo')
+                if (profileInfo) {
+                    profileInfo.innerHTML += `
+                        <div class="rank-badge">
+                            ${medalEmoji} Место в топе: #${profile.season_rank}
+                        </div>
+                    `
+                }
+            }
 
-			// ========== ИСПРАВЛЕННЫЙ ОБРАБОТЧИК УДАЛЕНИЯ ==========
-			document.querySelectorAll('.delete-post-btn').forEach(btn => {
-				btn.addEventListener('click', async (e) => {
-					e.preventDefault()
-					e.stopPropagation()
-					
-					if (!confirm('Удалить пост?')) return
-					
-					const postId = btn.dataset.postId
-					const postElement = btn.closest('.post')
-					
-					const res = await fetch('/api/posts', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify({
-							action: 'delete',
-							postId: parseInt(postId)
-						})
-					})
-					
-					const data = await res.json()
-					
-					if (data.success) {
-						postElement.remove()
-						// ===== ОБНОВЛЯЕМ СЧЕТЧИК ПОСТОВ =====
-						const postsCount = document.getElementById('postsCount')
-						postsCount.textContent = parseInt(postsCount.textContent) - 1
-					} else {
-						alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
-					}
-				})
-			})
-		}
+            // ===== СТАТУС =====
+            if (profile.status_text) {
+                document.getElementById('statusContainer').style.display = 'flex'
+                document.getElementById('statusText').textContent = profile.status_text
+            }
 
+            // ===== КНОПКА ПОДПИСКИ =====
+            if (!isOwnProfile) {
+                const btnText = profile.isSubscribed ? 'Отписаться' : 'Подписаться'
+                document.getElementById('subscribeBtn').innerHTML = `
+                    <button id="subscribeBtnAction" class="btn">${btnText}</button>
+                `
+                document.getElementById('subscribeBtnAction').onclick = toggleSubscribe
+            }
 
+            // ===== ОПИСАНИЕ (BIO) =====
+            renderBio(profile)
+
+            // ===== ПАНЕЛЬ МЕДАЛЕЙ =====
+            document.getElementById('totalMedals').textContent = profile.medals_count || 0
+            document.getElementById('currentRank').textContent = profile.season_rank || '—'
+
+            if (isOwnProfile && profile.season_rank === 1 && !profile.hide_winner_profile) {
+                document.getElementById('hideWinnerBtn').style.display = 'block'
+            }
+
+            // ===== КНОПКА ВЫБОРА АВАТАРКИ =====
+            if (isOwnProfile) {
+                document.getElementById('chooseAvatarBtn').style.display = 'block'
+                document.getElementById('chooseAvatarBtn').onclick = openAvatarModal
+                loadAvatarInfo()
+            }
+
+            // ===== ПОСТЫ =====
+            const postsDiv = document.getElementById('posts')
+            if (profile.posts?.length) {
+                postsDiv.innerHTML = profile.posts.map(post => `
+                    <div class="post" data-post-id="${post.id}">
+                        <div class="post-header">
+                            <img src="${avatarImg.src}" class="post-avatar" 
+                                 onclick="location.href='profile.html?username=${profile.username}'">
+                            <strong>@${profile.username}</strong>
+                            <small>${new Date(post.created_at).toLocaleString()}</small>
+                            ${(currentUser.is_admin || currentUser.id === post.user_id) ? `
+                                <button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
+                            ` : ''}
+                        </div>
+                        <div class="post-content">${post.content}</div>
+                        ${post.image_url ? `
+                            <div class="post-image">
+                                <img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
+                            </div>
+                        ` : ''}
+                        <div class="post-stats">
+                            <span>❤️ ${post.likes_count || 0}</span>
+                            <span>👁️ ${post.views_count || 0}</span>
+                        </div>
+                    </div>
+                `).join('')
+            } else {
+                postsDiv.innerHTML = '<p>У пользователя пока нет постов</p>'
+            }
+        }
+
+        // ===== ОПИСАНИЕ (BIO) =====
+        function renderBio(profile) {
+            const bioDisplay = document.getElementById('bioDisplay')
+            const bioEdit = document.getElementById('bioEdit')
+            const bioInput = document.getElementById('bioInput')
+            const bioCounter = document.getElementById('bioCurrentChars')
+            
+            if (profile.bio) {
+                bioDisplay.innerHTML = `
+                    <div class="bio-text">${profile.bio.replace(/\n/g, '<br>')}</div>
+                `
+            } else {
+                bioDisplay.innerHTML = '<div class="bio-text bio-empty">Пока ничего не рассказал о себе</div>'
+            }
+            
+            if (isOwnProfile) {
+                bioDisplay.innerHTML += '<button id="editBioBtn" class="btn btn-small edit-bio-btn">✏️ Редактировать</button>'
+                
+                document.getElementById('editBioBtn').onclick = () => {
+                    bioDisplay.style.display = 'none'
+                    bioEdit.style.display = 'block'
+                    bioInput.value = profile.bio || ''
+                    if (bioCounter) bioCounter.textContent = bioInput.value.length
+                }
+                
+                if (bioInput) {
+                    bioInput.addEventListener('input', () => {
+                        if (bioCounter) bioCounter.textContent = bioInput.value.length
+                    })
+                }
+                
+                document.getElementById('saveBioBtn').onclick = async () => {
+                    const newBio = bioInput.value.trim()
+                    
+                    const res = await fetch('/api/user', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            action: 'update_bio',
+                            bio: newBio
+                        })
+                    })
+                    
+                    const data = await res.json()
+                    
+                    if (data.success) {
+                        profile.bio = newBio
+                        bioDisplay.style.display = 'block'
+                        bioEdit.style.display = 'none'
+                        renderBio(profile)
+                    } else {
+                        alert('Ошибка: ' + data.error)
+                    }
+                }
+                
+                document.getElementById('cancelBioBtn').onclick = () => {
+                    bioDisplay.style.display = 'block'
+                    bioEdit.style.display = 'none'
+                }
+            }
+        }
+
+        // ===== АВАТАРКИ =====
+        async function loadAvatarInfo() {
+            const res = await fetch('/api/avatars', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: 'get_info' })
+            })
+            
+            const data = await res.json()
+            
+            if (!data.error) {
+                window.avatarInfo = data
+                renderAvatarModal()
+            }
+        }
+
+        function renderAvatarModal() {
+            const grid = document.getElementById('avatarsGrid')
+            const info = window.avatarInfo
+            if (!info) return
+
+            grid.innerHTML = ''
+            
+            for (let i = 1; i <= info.maxAvailable; i++) {
+                const isCurrent = i === info.currentNumber
+                grid.innerHTML += `
+                    <div class="avatar-option ${isCurrent ? 'current' : ''}" 
+                         onclick="selectAvatar(${i})">
+                        <img src="/avatars/avatar${i}.jpg" class="avatar-preview">
+                        ${isCurrent ? '<span class="current-badge">✓</span>' : ''}
+                    </div>
+                `
+            }
+
+            for (let i = info.maxAvailable + 1; i <= 8; i++) {
+                const referralsNeeded = i - 1 - info.referrals
+                grid.innerHTML += `
+                    <div class="avatar-option locked" title="Нужно ещё ${referralsNeeded} рефералов">
+                        <img src="/avatars/avatar${i}.jpg" class="avatar-preview" style="opacity: 0.3">
+                        <span class="lock-badge">🔒</span>
+                    </div>
+                `
+            }
+
+            if (info.canUpload) {
+                document.getElementById('uploadAvatarSection').style.display = 'block'
+            }
+        }
+
+        window.selectAvatar = async function(number) {
+            const res = await fetch('/api/avatars', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'select',
+                    avatarId: number
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                document.getElementById('profileAvatar').src = `/avatars/avatar${number}.jpg`
+                closeAvatarModal()
+                loadAvatarInfo()
+            } else {
+                alert('Ошибка: ' + data.error)
+            }
+        }
+
+        function openAvatarModal() {
+            document.getElementById('avatarModal').style.display = 'flex'
+        }
+
+        function closeAvatarModal() {
+            document.getElementById('avatarModal').style.display = 'none'
+        }
+
+        document.getElementById('closeAvatarModal').onclick = closeAvatarModal
+        document.getElementById('uploadAvatarBtn').onclick = async () => {
+            const url = document.getElementById('customAvatarUrl').value.trim()
+            if (!url) return
+
+            const res = await fetch('/api/avatars', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'upload',
+                    imageUrl: url
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                document.getElementById('profileAvatar').src = url
+                closeAvatarModal()
+            } else {
+                alert('Ошибка: ' + data.error)
+            }
+        }
+
+        // ===== ПОДПИСКА =====
         async function toggleSubscribe() {
             const btn = document.getElementById('subscribeBtnAction')
             const originalText = btn.textContent
@@ -280,30 +469,52 @@
             btn.disabled = false
         }
 
+        // ===== КНОПКА УБРАТЬ ПРОФИЛЬ ПОБЕДИТЕЛЯ =====
+        document.getElementById('hideWinnerBtn').onclick = async () => {
+            if (!confirm('Убрать свой профиль из ленты? Это действие нельзя отменить.')) return
+            
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'hide_winner_profile'
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                document.getElementById('hideWinnerBtn').style.display = 'none'
+                alert('Профиль убран из ленты')
+            }
+        }
+
+        // ===== ТЁМНАЯ ТЕМА =====
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            if (!themeBtn) return
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
+            
+            themeBtn.onclick = () => {
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeBtn.textContent = nowDark ? '☀️ Светлая' : '🌙 Тёмная'
+            }
+        }
+
         document.getElementById('logoutBtn').onclick = () => {
             localStorage.clear()
             location.href = '/'
         }
 
         loadProfile()
-		
-		// ===== ТЕМНАЯ ТЕМА =====
-		function initTheme() {
-			const savedTheme = localStorage.getItem('theme') || 'light'
-			document.body.className = savedTheme === 'dark' ? 'dark-theme' : ''
-			
-			const themeBtn = document.getElementById('themeToggle')
-			themeBtn.textContent = savedTheme === 'dark' ? '☀️ Светлая' : '🌙 Тёмная'
-			
-			themeBtn.onclick = () => {
-				const isDark = document.body.classList.toggle('dark-theme')
-				localStorage.setItem('theme', isDark ? 'dark' : 'light')
-				themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
-			}
-		}
-
-		// Вызови после загрузки профиля
-		initTheme()
+        initTheme()
     </script>
 </body>
 </html>

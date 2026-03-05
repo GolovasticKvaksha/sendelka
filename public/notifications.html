@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script>
-		(function() {
-			const savedTheme = localStorage.getItem('theme')
-			if (savedTheme === 'dark') {
-				document.documentElement.classList.add('dark-theme')
-			}
-		})()
-	</script>
     <title>Уведомления | Sendelka</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme')
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme')
+            }
+        })()
+    </script>
 </head>
 <body>
     <div class="container">
@@ -20,6 +20,7 @@
                 <a href="lenta.html" class="btn">Лента</a>
                 <a href="profile.html" class="btn">Профиль</a>
                 <a href="search.html" class="btn">Поиск</a>
+                <a href="top.html" class="btn">🏆 Топы</a>
                 <button id="logoutBtn" class="btn">Выйти</button>
             </div>
         </div>
@@ -61,21 +62,49 @@
                 return
             }
 
-            listDiv.innerHTML = notifications.map(n => `
-                <div class="notification ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
-                    <div class="notification-content">
-                        ${n.type === 'like' 
-                            ? `❤️ <strong>@${n.from_user_id?.username}</strong> лайкнул твой пост`
-                            : `👤 <strong>@${n.from_user_id?.username}</strong> подписался на тебя`
-                        }
+            listDiv.innerHTML = notifications.map(n => {
+                // Определяем текст уведомления
+                let notificationText = ''
+                
+                if (n.content) {
+                    // Если есть готовый текст - используем его
+                    notificationText = n.content
+                } else {
+                    // Если нет - формируем по типу
+                    switch(n.type) {
+                        case 'like':
+                            notificationText = `❤️ <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> лайкнул твой пост`
+                            break
+                        case 'subscribe':
+                            notificationText = `👤 <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> подписался на тебя`
+                            break
+                        case 'referral':
+                            notificationText = `👤 <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> зарегистрировался по твоей ссылке`
+                            break
+                        case 'avatar':
+                            notificationText = `✨ Открыта новая аватарка!`
+                            break
+                        case 'medal':
+                            notificationText = `🏅 +1 медаль! Твой реферал привёл 4 человека`
+                            break
+                        default:
+                            notificationText = 'Новое уведомление'
+                    }
+                }
+                
+                return `
+                    <div class="notification ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
+                        <div class="notification-content">
+                            ${notificationText}
+                        </div>
+                        <div class="notification-time">
+                            ${new Date(n.created_at).toLocaleString()}
+                        </div>
                     </div>
-                    <div class="notification-time">
-                        ${new Date(n.created_at).toLocaleString()}
-                    </div>
-                </div>
-            `).join('')
+                `
+            }).join('')
 
-            // Отмечаем как прочитанные
+            // Отмечаем как прочитанные при просмотре
             notifications.forEach(n => {
                 if (!n.is_read) markAsRead(n.id)
             })

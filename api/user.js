@@ -12,10 +12,10 @@ export default async function handler(req, res) {
       const currentUserId = req.body.currentUserId
 
       const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('id, username, created_at, subscribers_count, total_likes_received, posts_count, is_admin, bio')
-        .eq('username', username)
-        .single()
+		.from('users')
+		.select('id, username, created_at, subscribers_count, total_likes_received, posts_count, is_admin, bio, avatar, medals_count, season_rank, hide_winner_profile')
+		.eq('username', username)
+		.single()
 
       if (userError || !user) {
         return res.status(200).json({ error: 'Пользователь не найден' })
