@@ -19,7 +19,6 @@ export default async function handler(req, res) {
                 .eq('id', userId)
                 .single()
 
-            // Номер текущей аватарки (avatar1.jpg = 1)
             const currentNumber = parseInt(user.avatar?.replace('avatar', '').replace('.jpg', '')) || 1
 
             return res.status(200).json({
@@ -27,7 +26,6 @@ export default async function handler(req, res) {
                 currentNumber: currentNumber,
                 referrals: user.referrals_count,
                 canUpload: user.can_upload_avatar,
-                // Максимальная доступная аватарка = 1 + рефералы (но не больше 8)
                 maxAvailable: Math.min(1 + user.referrals_count, 8)
             })
         }
@@ -36,7 +34,6 @@ export default async function handler(req, res) {
         if (action === 'select') {
             const avatarNumber = parseInt(avatarId)
             
-            // Проверяем, доступна ли эта аватарка
             const { data: user } = await supabase
                 .from('users')
                 .select('referrals_count')
@@ -51,16 +48,17 @@ export default async function handler(req, res) {
 
             const avatarPath = `avatar${avatarNumber}.jpg`
 
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('users')
                 .update({ avatar: avatarPath })
                 .eq('id', userId)
+                .select()
 
             if (error) {
                 return res.status(200).json({ error: error.message })
             }
 
-            return res.status(200).json({ success: true, avatar: avatarPath })
+            return res.status(200).json({ success: true, avatar: data[0]?.avatar })
         }
 
         // ===== ЗАГРУЗИТЬ СВОЮ АВАТАРКУ =====
@@ -79,21 +77,21 @@ export default async function handler(req, res) {
                 return res.status(200).json({ error: 'Ссылка на изображение обязательна' })
             }
 
-            // Простая валидация URL
             if (!imageUrl.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i)) {
                 return res.status(200).json({ error: 'Некорректная ссылка на изображение' })
             }
 
-            const { error } = await supabase
+            const { data, error } = await supabase
                 .from('users')
                 .update({ avatar: imageUrl })
                 .eq('id', userId)
+                .select()
 
             if (error) {
                 return res.status(200).json({ error: error.message })
             }
 
-            return res.status(200).json({ success: true, avatar: imageUrl })
+            return res.status(200).json({ success: true, avatar: data[0]?.avatar })
         }
 
         return res.status(200).json({ error: 'Unknown action' })

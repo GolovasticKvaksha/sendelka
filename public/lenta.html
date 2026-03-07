@@ -27,6 +27,7 @@
                 <a href="profile.html" class="btn">Мой профиль</a>
                 <a href="search.html" class="btn">Поиск</a>
                 <a href="top.html" class="btn">🏆 Топы</a>
+                <button id="themeToggle" class="btn">🌙 Тёмная</button>
                 <button id="logoutBtn" class="btn">Выйти</button>
             </div>
         </div>
@@ -58,618 +59,678 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('token')
-        const user = JSON.parse(localStorage.getItem('user') || '{}')
-        
-        if (!token) location.href = '/login.html'
+		const token = localStorage.getItem('token')
+		const user = JSON.parse(localStorage.getItem('user') || '{}')
+		
+		if (!token) location.href = '/login.html'
 
-        // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-        let currentFilter = 'all'
-        let currentOffset = 0
-        let hasMore = true
-        let isLoading = false
-        let commentsOffset = {}
+		// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+		let currentFilter = 'all'
+		let currentOffset = 0
+		let hasMore = true
+		let isLoading = false
+		let commentsOffset = {}
 
-        // ===== ЗАГРУЗКА БАННЕРА ПОБЕДИТЕЛЯ =====
-        async function loadWinnerBanner() {
-            try {
-                const res = await fetch('/api/top', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'get_top',
-                        category: 'medals',
-                        limit: 1,
-                        offset: 0
-                    })
-                })
-                
-                const data = await res.json()
-                
-                if (!data.error && data.users && data.users.length > 0) {
-                    const winner = data.users[0]
-                    
-                    // Проверяем, не скрыл ли победитель свой профиль
-                    const winnerRes = await fetch('/api/user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'profile',
-                            username: winner.username,
-                            currentUserId: user.id
-                        })
-                    })
-                    
-                    const winnerProfile = await winnerRes.json()
-                    
-                    if (!winnerProfile.hide_winner_profile) {
-                        const banner = document.getElementById('winnerBanner')
-                        document.getElementById('winnerAvatar').src = winner.avatar?.startsWith('avatar') ? 
-                            `/avatars/${winner.avatar}` : winner.avatar || '/avatars/avatar1.jpg'
-                        document.getElementById('winnerName').textContent = `@${winner.username}`
-                        document.getElementById('winnerLink').href = `profile.html?username=${winner.username}`
-                        banner.style.display = 'flex'
-                    }
-                }
-            } catch (err) {
-                console.error('Ошибка загрузки баннера:', err)
-            }
-        }
+		// ===== ПРОВЕРКА ОБНОВЛЕНИЯ АВАТАРКИ =====
+		function checkAvatarUpdate() {
+			const lastAvatarUpdate = localStorage.getItem('avatar_updated')
+			const updatedFor = localStorage.getItem('avatar_updated_for')
+			const newAvatar = localStorage.getItem('profileAvatar')
+			
+			if (lastAvatarUpdate && newAvatar && updatedFor) {
+				console.log('Обновляем аватарки для:', updatedFor)
+				const versionedAvatar = newAvatar.includes('?') ? 
+					newAvatar : newAvatar + '?v=' + Date.now()
+				
+				document.querySelectorAll(`.post-avatar[data-username="${updatedFor}"], .comment-avatar[data-username="${updatedFor}"]`).forEach(img => {
+					img.src = versionedAvatar
+				})
+				
+				localStorage.removeItem('avatar_updated')
+				localStorage.removeItem('avatar_updated_for')
+			}
+		}
 
-        // ===== ЗАГРУЗКА ПОСТОВ =====
-        async function loadPosts(reset = false) {
-            if (isLoading) return
-            if (reset) {
-                currentOffset = 0
-                hasMore = true
-                document.getElementById('posts').innerHTML = ''
-                document.getElementById('loadMoreBtn').style.display = 'block'
-            }
-            
-            if (!hasMore) {
-                document.getElementById('loadMoreBtn').style.display = 'none'
-                return
-            }
+		// ===== ЗАГРУЗКА БАННЕРА ПОБЕДИТЕЛЯ =====
+		async function loadWinnerBanner() {
+			try {
+				const res = await fetch('/api/top', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'get_top',
+						category: 'medals',
+						limit: 1,
+						offset: 0
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error && data.users && data.users.length > 0) {
+					const winner = data.users[0]
+					
+					const winnerRes = await fetch('/api/user', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							action: 'profile',
+							username: winner.username,
+							currentUserId: user.id
+						})
+					})
+					
+					const winnerProfile = await winnerRes.json()
+					
+					if (!winnerProfile.hide_winner_profile) {
+						const banner = document.getElementById('winnerBanner')
+						document.getElementById('winnerAvatar').src = winner.avatar?.startsWith('avatar') ? 
+							`/avatars/${winner.avatar}` : winner.avatar || '/avatars/avatar1.jpg'
+						document.getElementById('winnerName').textContent = `@${winner.username}`
+						document.getElementById('winnerLink').href = `profile.html?username=${winner.username}`
+						banner.style.display = 'flex'
+					}
+				}
+			} catch (err) {
+				console.error('Ошибка загрузки баннера:', err)
+			}
+		}
 
-            isLoading = true
-            document.getElementById('loadingSpinner').style.display = 'block'
+		// ===== ЗАГРУЗКА ПОСТОВ =====
+		async function loadPosts(reset = false) {
+			if (isLoading) return
+			if (reset) {
+				currentOffset = 0
+				hasMore = true
+				document.getElementById('posts').innerHTML = ''
+				document.getElementById('loadMoreBtn').style.display = 'block'
+			}
+			
+			if (!hasMore) {
+				document.getElementById('loadMoreBtn').style.display = 'none'
+				return
+			}
 
-            try {
-                const res = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'feed',
-                        userId: user.id,
-                        filter: currentFilter,
-                        limit: 8,
-                        offset: currentOffset
-                    })
-                })
-                
-                const data = await res.json()
-                
-                if (data.error) {
-                    document.getElementById('posts').innerHTML = `<p>Ошибка: ${data.error}</p>`
-                    return
-                }
+			isLoading = true
+			document.getElementById('loadingSpinner').style.display = 'block'
 
-                const posts = data.posts || []
-                hasMore = data.hasMore || false
+			try {
+				const res = await fetch('/api/posts', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'feed',
+						userId: user.id,
+						filter: currentFilter,
+						limit: 8,
+						offset: currentOffset
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (data.error) {
+					document.getElementById('posts').innerHTML = `<p>Ошибка: ${data.error}</p>`
+					return
+				}
 
-                // Загружаем подписки пользователя
-                let subscribedUserIds = new Set()
-                try {
-                    const subsRes = await fetch('/api/user', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ action: 'get_subscriptions' })
-                    })
-                    const subsData = await subsRes.json()
-                    
-                    if (!subsData.error && subsData.subscriptions) {
-                        subscribedUserIds = new Set(subsData.subscriptions.map(s => s.following_id))
-                    }
-                } catch (err) {
-                    console.error('Ошибка загрузки подписок:', err)
-                }
-                
-                // Добавляем флаг подписки к постам
-                const postsWithSubs = posts.map(post => ({
-                    ...post,
-                    isSubscribed: subscribedUserIds.has(post.user_id)
-                }))
-                
-                // Отрисовываем посты
-                if (reset) {
-                    document.getElementById('posts').innerHTML = renderPosts(postsWithSubs)
-                } else {
-                    document.getElementById('posts').innerHTML += renderPosts(postsWithSubs)
-                }
+				const posts = data.posts || []
+				hasMore = data.hasMore || false
 
-                currentOffset += 8
-                document.getElementById('loadMoreBtn').style.display = hasMore ? 'block' : 'none'
-                
-                // Загружаем комментарии для каждого поста
-                posts.forEach(post => {
-                    loadComments(post.id)
-                })
-                
-                // Добавляем обработчики
-                document.querySelectorAll('.like-btn').forEach(btn => btn.addEventListener('click', likePost))
-                document.querySelectorAll('.delete-post-btn').forEach(btn => btn.addEventListener('click', deletePost))
-                document.querySelectorAll('.subscribe-btn-inline').forEach(btn => btn.addEventListener('click', subscribeFromFeed))
-                
-            } catch (err) {
-                console.error('Ошибка загрузки:', err)
-            } finally {
-                isLoading = false
-                document.getElementById('loadingSpinner').style.display = 'none'
-            }
-        }
+				// Загружаем подписки пользователя
+				let subscribedUserIds = new Set()
+				try {
+					const subsRes = await fetch('/api/user', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${token}`
+						},
+						body: JSON.stringify({ action: 'get_subscriptions' })
+					})
+					const subsData = await subsRes.json()
+					
+					if (!subsData.error && subsData.subscriptions) {
+						subscribedUserIds = new Set(subsData.subscriptions.map(s => s.following_id))
+					}
+				} catch (err) {
+					console.error('Ошибка загрузки подписок:', err)
+				}
+				
+				// Добавляем флаг подписки к постам
+				const postsWithSubs = posts.map(post => ({
+					...post,
+					isSubscribed: subscribedUserIds.has(post.user_id)
+				}))
+				
+				// Отрисовываем посты
+				if (reset) {
+					document.getElementById('posts').innerHTML = renderPosts(postsWithSubs)
+				} else {
+					document.getElementById('posts').innerHTML += renderPosts(postsWithSubs)
+				}
 
-        // ===== ОТРИСОВКА ПОСТОВ =====
-        function renderPosts(posts) {
-            if (!posts.length) return ''
+				currentOffset += 8
+				document.getElementById('loadMoreBtn').style.display = hasMore ? 'block' : 'none'
+				
+				// Загружаем комментарии для каждого поста
+				posts.forEach(post => {
+					loadComments(post.id)
+				})
+				
+				// Добавляем обработчики
+				document.querySelectorAll('.like-btn').forEach(btn => btn.addEventListener('click', likePost))
+				document.querySelectorAll('.delete-post-btn').forEach(btn => btn.addEventListener('click', deletePost))
+				document.querySelectorAll('.subscribe-btn-inline').forEach(btn => btn.addEventListener('click', subscribeFromFeed))
+				
+				// Проверяем обновление аватарки
+				checkAvatarUpdate()
+				
+			} catch (err) {
+				console.error('Ошибка загрузки:', err)
+			} finally {
+				isLoading = false
+				document.getElementById('loadingSpinner').style.display = 'none'
+			}
+		}
 
-            return posts.map(post => {
-                const subscribeBtnText = post.isSubscribed ? '✓ Подписан' : '+ Подписаться'
-                const subscribeBtnClass = post.isSubscribed ? 'subscribe-btn-inline subscribed' : 'subscribe-btn-inline'
-                
-                // Аватарка автора
-                const authorAvatar = post.users?.avatar?.startsWith('avatar') ? 
-                    `/avatars/${post.users.avatar}` : (post.users?.avatar || '/avatars/avatar1.jpg')
-                
-                const photoHtml = post.image_url ? `
-                    <div class="post-image">
-                        <img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
-                    </div>
-                ` : ''
-                
-                return `
-                    <div class="post" data-post-id="${post.id}" data-user-id="${post.user_id}">
-                        <div class="post-header">
-                            <img src="${authorAvatar}" class="post-avatar" 
-                                 onclick="location.href='profile.html?username=${post.users?.username}'"
-                                 onerror="this.src='/avatars/avatar1.jpg'">
-                            <div class="post-author-line">
-                                <div class="post-author-row">
-                                    <a href="profile.html?username=${post.users?.username}" class="post-author">
-                                        <strong>@${post.users?.username}</strong>
-                                        ${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-                                    </a>
-                                    <span class="post-date">${new Date(post.created_at).toLocaleString()}</span>
-                                </div>
-                                ${post.user_id !== user.id ? `
-                                    <div class="subscribe-row">
-                                        <button class="${subscribeBtnClass}" 
-                                                data-user-id="${post.user_id}">
-                                            ${subscribeBtnText}
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            ${(user.is_admin || post.user_id === user.id) ? `
-                                <button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="post-content">${post.content}</div>
-                        ${photoHtml}
-                        
-                        <div class="post-actions">
-                            <button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
-                                ❤️ <span class="likes-count">${post.likes_count || 0}</span>
-                            </button>
-                            <span class="views-count">👁️ ${post.views_count || 0}</span>
-                            <button class="comments-btn" id="show-comments-btn-${post.id}" 
-                                    onclick="toggleComments(${post.id})">
-                                💬 <span id="comments-count-${post.id}">${post.comments_count || 0}</span>
-                            </button>
-                        </div>
-                        
-                        <div id="comments-container-${post.id}" class="comments-container" style="display: none;">
-                            <div id="comments-list-${post.id}" class="comments-list"></div>
-                            
-                            <div class="load-more-comments" id="load-more-comments-${post.id}" style="display: none;">
-                                <button class="btn load-more-comments-btn" 
-                                        onclick="loadComments(${post.id})">
-                                    Ещё комментарии
-                                </button>
-                            </div>
-                            
-                            <div class="add-comment">
-                                <input type="text" 
-                                       id="comment-input-${post.id}" 
-                                       class="comment-input" 
-                                       placeholder="Написать комментарий... (до 200 символов)"
-                                       maxlength="200">
-                                <button class="btn comment-btn" onclick="addComment(${post.id})">➤</button>
-                            </div>
-                        </div>
-                    </div>
-                `
-            }).join('')
-        }
+		// ===== ОТРИСОВКА ПОСТОВ (С ВЕРСИОНИРОВАНИЕМ АВАТАРОК) =====
+		function renderPosts(posts) {
+			if (!posts.length) return ''
 
-        // ===== ФУНКЦИИ КОММЕНТАРИЕВ =====
-        async function toggleComments(postId) {
-            const container = document.getElementById(`comments-container-${postId}`)
-            const btn = document.getElementById(`show-comments-btn-${postId}`)
-            
-            if (!container || !btn) return
-            
-            if (container.style.display === 'none') {
-                container.style.display = 'block'
-                btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
-                               document.getElementById(`comments-count-${postId}`).textContent + 
-                               '</span> ↑'
-                
-                if (!commentsOffset[postId] && commentsOffset[postId] !== 0) {
-                    commentsOffset[postId] = 0
-                    await loadComments(postId, true)
-                }
-            } else {
-                container.style.display = 'none'
-                btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
-                               document.getElementById(`comments-count-${postId}`).textContent + 
-                               '</span>'
-            }
-        }
+			return posts.map(post => {
+				const subscribeBtnText = post.isSubscribed ? '✓ Подписан' : '+ Подписаться'
+				const subscribeBtnClass = post.isSubscribed ? 'subscribe-btn-inline subscribed' : 'subscribe-btn-inline'
+				
+				const version = Date.now()
+				const authorAvatar = post.users?.avatar ? 
+					(post.users.avatar.startsWith('avatar') ? 
+						`/avatars/${post.users.avatar}?v=${version}` : 
+						post.users.avatar + '?v=' + version) 
+					: '/avatars/avatar1.jpg?v=' + version
+				
+				const photoHtml = post.image_url ? `
+					<div class="post-image">
+						<img src="${post.image_url}" alt="post image" class="post-img" loading="lazy">
+					</div>
+				` : ''
+				
+				return `
+					<div class="post" data-post-id="${post.id}" data-user-id="${post.user_id}">
+						<div class="post-header">
+							<img src="${authorAvatar}" class="post-avatar" 
+								 onclick="location.href='profile.html?username=${post.users?.username}'"
+								 data-username="${post.users?.username}"
+								 alt="${post.users?.username}"
+								 onerror="this.src='/avatars/avatar1.jpg?v=${version}'">
+							<div class="post-author-line">
+								<div class="post-author-row">
+									<a href="profile.html?username=${post.users?.username}" class="post-author">
+										<strong>@${post.users?.username}</strong>
+										${post.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+									</a>
+									<span class="post-date">${new Date(post.created_at).toLocaleString()}</span>
+								</div>
+								${post.user_id !== user.id ? `
+									<div class="subscribe-row">
+										<button class="${subscribeBtnClass}" 
+												data-user-id="${post.user_id}">
+											${subscribeBtnText}
+										</button>
+									</div>
+								` : ''}
+							</div>
+							${(user.is_admin || post.user_id === user.id) ? `
+								<button class="delete-post-btn" data-post-id="${post.id}" title="Удалить пост">🗑️</button>
+							` : ''}
+						</div>
+						
+						<div class="post-content">${post.content}</div>
+						${photoHtml}
+						
+						<div class="post-actions">
+							<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
+								❤️ <span class="likes-count">${post.likes_count || 0}</span>
+							</button>
+							<span class="views-count">👁️ ${post.views_count || 0}</span>
+							<button class="comments-btn" id="show-comments-btn-${post.id}" 
+									onclick="toggleComments(${post.id})">
+								💬 <span id="comments-count-${post.id}">${post.comments_count || 0}</span>
+							</button>
+						</div>
+						
+						<div id="comments-container-${post.id}" class="comments-container" style="display: none;">
+							<div id="comments-list-${post.id}" class="comments-list"></div>
+							
+							<div class="load-more-comments" id="load-more-comments-${post.id}" style="display: none;">
+								<button class="btn load-more-comments-btn" 
+										onclick="loadComments(${post.id})">
+									Ещё комментарии
+								</button>
+							</div>
+							
+							<div class="add-comment">
+								<input type="text" 
+									   id="comment-input-${post.id}" 
+									   class="comment-input" 
+									   placeholder="Написать комментарий... (до 200 символов)"
+									   maxlength="200">
+								<button class="btn comment-btn" onclick="addComment(${post.id})">➤</button>
+							</div>
+						</div>
+					</div>
+				`
+			}).join('')
+		}
 
-        async function loadComments(postId, reset = false) {
-            if (reset) {
-                commentsOffset[postId] = 0
-                const list = document.getElementById(`comments-list-${postId}`)
-                if (list) list.innerHTML = ''
-            }
-            
-            try {
-                const res = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'get_comments',
-                        postId: postId,
-                        offset: commentsOffset[postId] || 0,
-                        limit: 8
-                    })
-                })
-                
-                const data = await res.json()
-                
-                if (!data.error) {
-                    renderComments(postId, data.comments || [], reset)
-                    
-                    const loadMoreBtn = document.getElementById(`load-more-comments-${postId}`)
-                    if (loadMoreBtn) {
-                        if (data.hasMore) {
-                            commentsOffset[postId] = (commentsOffset[postId] || 0) + 8
-                            loadMoreBtn.style.display = 'block'
-                        } else {
-                            loadMoreBtn.style.display = 'none'
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('Ошибка загрузки комментариев:', err)
-            }
-        }
+		// ===== ФУНКЦИИ КОММЕНТАРИЕВ =====
+		async function toggleComments(postId) {
+			const container = document.getElementById(`comments-container-${postId}`)
+			const btn = document.getElementById(`show-comments-btn-${postId}`)
+			
+			if (!container || !btn) return
+			
+			if (container.style.display === 'none') {
+				container.style.display = 'block'
+				btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
+							   document.getElementById(`comments-count-${postId}`).textContent + 
+							   '</span> ↑'
+				
+				if (!commentsOffset[postId] && commentsOffset[postId] !== 0) {
+					commentsOffset[postId] = 0
+					await loadComments(postId, true)
+				}
+			} else {
+				container.style.display = 'none'
+				btn.innerHTML = '💬 <span id="comments-count-' + postId + '">' + 
+							   document.getElementById(`comments-count-${postId}`).textContent + 
+							   '</span>'
+			}
+		}
 
-        function renderComments(postId, comments, reset = false) {
-            const list = document.getElementById(`comments-list-${postId}`)
-            if (!list) return
-            
-            if (reset) {
-                list.innerHTML = ''
-            }
-            
-            if (comments.length === 0 && reset) {
-                list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'
-                return
-            }
-            
-            comments.forEach(comment => {
-                const commentAvatar = comment.users?.avatar?.startsWith('avatar') ? 
-                    `/avatars/${comment.users.avatar}` : (comment.users?.avatar || '/avatars/avatar1.jpg')
-                
-                const commentHtml = `
-                    <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-header">
-                            <img src="${commentAvatar}" class="comment-avatar" 
-                                 onclick="location.href='profile.html?username=${comment.users?.username}'"
-                                 onerror="this.src='/avatars/avatar1.jpg'">
-                            <a href="profile.html?username=${comment.users?.username}" class="comment-author">
-                                <strong>@${comment.users?.username}</strong>
-                                ${comment.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
-                            </a>
-                            <small>${new Date(comment.created_at).toLocaleString()}</small>
-                            ${(user.is_admin || comment.user_id === user.id) ? `
-                                <button class="delete-comment-btn" data-comment-id="${comment.id}" data-post-id="${postId}">🗑️</button>
-                            ` : ''}
-                        </div>
-                        <div class="comment-content">${comment.content}</div>
-                    </div>
-                `
-                list.insertAdjacentHTML('beforeend', commentHtml)
-            })
-            
-            list.querySelectorAll('.delete-comment-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    const commentId = e.currentTarget.dataset.commentId
-                    const postId = e.currentTarget.dataset.postId
-                    deleteComment(commentId, postId)
-                })
-            })
-        }
+		async function loadComments(postId, reset = false) {
+			if (reset) {
+				commentsOffset[postId] = 0
+				const list = document.getElementById(`comments-list-${postId}`)
+				if (list) list.innerHTML = ''
+			}
+			
+			try {
+				const res = await fetch('/api/posts', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						action: 'get_comments',
+						postId: postId,
+						offset: commentsOffset[postId] || 0,
+						limit: 8
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error) {
+					renderComments(postId, data.comments || [], reset)
+					
+					const loadMoreBtn = document.getElementById(`load-more-comments-${postId}`)
+					if (loadMoreBtn) {
+						if (data.hasMore) {
+							commentsOffset[postId] = (commentsOffset[postId] || 0) + 8
+							loadMoreBtn.style.display = 'block'
+						} else {
+							loadMoreBtn.style.display = 'none'
+						}
+					}
+				}
+			} catch (err) {
+				console.error('Ошибка загрузки комментариев:', err)
+			}
+		}
 
-        async function addComment(postId) {
-            const input = document.getElementById(`comment-input-${postId}`)
-            if (!input) return
-            
-            const content = input.value.trim()
-            if (!content) return
-            
-            if (content.length > 200) {
-                alert('Максимум 200 символов')
-                return
-            }
-            
-            const res = await fetch('/api/posts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'add_comment',
-                    postId: postId,
-                    content: content
-                })
-            })
-            
-            const data = await res.json()
-            
-            if (!data.error) {
-                input.value = ''
-                await loadComments(postId, true)
-                
-                const countSpan = document.getElementById(`comments-count-${postId}`)
-                if (countSpan) {
-                    countSpan.textContent = parseInt(countSpan.textContent) + 1
-                }
-            } else {
-                alert('Ошибка: ' + data.error)
-            }
-        }
+		function renderComments(postId, comments, reset = false) {
+			const list = document.getElementById(`comments-list-${postId}`)
+			if (!list) return
+			
+			if (reset) {
+				list.innerHTML = ''
+			}
+			
+			if (comments.length === 0 && reset) {
+				list.innerHTML = '<div class="no-comments">Пока нет комментариев</div>'
+				return
+			}
+			
+			comments.forEach(comment => {
+				const version = Date.now()
+				const commentAvatar = comment.users?.avatar ? 
+					(comment.users.avatar.startsWith('avatar') ? 
+						`/avatars/${comment.users.avatar}?v=${version}` : 
+						comment.users.avatar + '?v=' + version) 
+					: '/avatars/avatar1.jpg?v=' + version
+				
+				const commentHtml = `
+					<div class="comment" data-comment-id="${comment.id}">
+						<div class="comment-header">
+							<img src="${commentAvatar}" class="comment-avatar" 
+								 onclick="location.href='profile.html?username=${comment.users?.username}'"
+								 data-username="${comment.users?.username}"
+								 alt="${comment.users?.username}"
+								 onerror="this.src='/avatars/avatar1.jpg?v=${version}'">
+							<a href="profile.html?username=${comment.users?.username}" class="comment-author">
+								<strong>@${comment.users?.username}</strong>
+								${comment.users?.is_admin ? '<span class="admin-badge" title="Администратор">✓</span>' : ''}
+							</a>
+							<small>${new Date(comment.created_at).toLocaleString()}</small>
+							${(user.is_admin || comment.user_id === user.id) ? `
+								<button class="delete-comment-btn" data-comment-id="${comment.id}" data-post-id="${postId}">🗑️</button>
+							` : ''}
+						</div>
+						<div class="comment-content">${comment.content}</div>
+					</div>
+				`
+				list.insertAdjacentHTML('beforeend', commentHtml)
+			})
+			
+			list.querySelectorAll('.delete-comment-btn').forEach(btn => {
+				btn.addEventListener('click', (e) => {
+					e.preventDefault()
+					e.stopPropagation()
+					const commentId = e.currentTarget.dataset.commentId
+					const postId = e.currentTarget.dataset.postId
+					window.deleteComment(commentId, postId)
+				})
+			})
+			
+			checkAvatarUpdate()
+		}
 
-        window.deleteComment = async function(commentId, postId) {
-            if (!confirm('Удалить комментарий?')) return
-            
-            try {
-                const res = await fetch('/api/posts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        action: 'delete_comment',
-                        commentId: commentId
-                    })
-                })
-                
-                const data = await res.json()
-                
-                if (data.success) {
-                    const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`)
-                    if (commentElement) commentElement.remove()
-                    
-                    const countSpan = document.getElementById(`comments-count-${postId}`)
-                    if (countSpan) {
-                        countSpan.textContent = parseInt(countSpan.textContent) - 1
-                    }
-                } else {
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
-                }
-            } catch (err) {
-                console.error('Ошибка удаления:', err)
-                alert('Ошибка соединения')
-            }
-        }
+		async function addComment(postId) {
+			const input = document.getElementById(`comment-input-${postId}`)
+			if (!input) return
+			
+			const content = input.value.trim()
+			if (!content) return
+			
+			if (content.length > 200) {
+				alert('Максимум 200 символов')
+				return
+			}
+			
+			const res = await fetch('/api/posts', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'add_comment',
+					postId: postId,
+					content: content
+				})
+			})
+			
+			const data = await res.json()
+			
+			if (!data.error) {
+				input.value = ''
+				await loadComments(postId, true)
+				
+				const countSpan = document.getElementById(`comments-count-${postId}`)
+				if (countSpan) {
+					countSpan.textContent = parseInt(countSpan.textContent) + 1
+				}
+			} else {
+				alert('Ошибка: ' + data.error)
+			}
+		}
 
-        // ===== ЛАЙКИ =====
-        async function likePost(e) {
-            const btn = e.currentTarget
-            const postId = btn.dataset.postId
-            const likesSpan = btn.querySelector('.likes-count')
-            
-            const res = await fetch('/api/posts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'like',
-                    postId: parseInt(postId)
-                })
-            })
+		window.deleteComment = async function(commentId, postId) {
+			if (!confirm('Удалить комментарий?')) return
+			
+			try {
+				const res = await fetch('/api/posts', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						action: 'delete_comment',
+						commentId: commentId
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (data.success) {
+					const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`)
+					if (commentElement) commentElement.remove()
+					
+					const countSpan = document.getElementById(`comments-count-${postId}`)
+					if (countSpan) {
+						countSpan.textContent = parseInt(countSpan.textContent) - 1
+					}
+				} else {
+					alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+				}
+			} catch (err) {
+				console.error('Ошибка удаления:', err)
+				alert('Ошибка соединения')
+			}
+		}
 
-            const data = await res.json()
-            
-            if (!data.error) {
-                btn.classList.toggle('liked', data.liked)
-                likesSpan.textContent = parseInt(likesSpan.textContent) + (data.liked ? 1 : -1)
-                loadNotificationsCount()
-            }
-        }
+		// ===== ЛАЙКИ =====
+		async function likePost(e) {
+			const btn = e.currentTarget
+			const postId = btn.dataset.postId
+			const likesSpan = btn.querySelector('.likes-count')
+			
+			const res = await fetch('/api/posts', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'like',
+					postId: parseInt(postId)
+				})
+			})
 
-        // ===== УДАЛЕНИЕ ПОСТА =====
-        async function deletePost(e) {
-            if (!confirm('Удалить пост?')) return
-            
-            const btn = e.currentTarget
-            const postId = btn.dataset.postId
-            
-            const res = await fetch('/api/posts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'delete',
-                    postId: parseInt(postId)
-                })
-            })
+			const data = await res.json()
+			
+			if (!data.error) {
+				btn.classList.toggle('liked', data.liked)
+				likesSpan.textContent = parseInt(likesSpan.textContent) + (data.liked ? 1 : -1)
+				loadNotificationsCount()
+			}
+		}
 
-            const data = await res.json()
-            
-            if (data.success) {
-                btn.closest('.post').remove()
-            } else {
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
-            }
-        }
+		// ===== УДАЛЕНИЕ ПОСТА =====
+		async function deletePost(e) {
+			if (!confirm('Удалить пост?')) return
+			
+			const btn = e.currentTarget
+			const postId = btn.dataset.postId
+			
+			const res = await fetch('/api/posts', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'delete',
+					postId: parseInt(postId)
+				})
+			})
 
-        // ===== ПОДПИСКА =====
-        async function subscribeFromFeed(e) {
-            const btn = e.currentTarget
-            const targetUserId = parseInt(btn.dataset.userId)
-            
-            const originalText = btn.textContent
-            btn.disabled = true
-            btn.textContent = '...'
-            
-            try {
-                const res = await fetch('/api/user', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        action: 'subscribe',
-                        targetUserId: targetUserId
-                    })
-                })
-                
-                const data = await res.json()
-                
-                if (!data.error) {
-                    if (data.subscribed) {
-                        btn.textContent = '✓ Подписан'
-                        btn.classList.add('subscribed')
-                    } else {
-                        btn.textContent = '+ Подписаться'
-                        btn.classList.remove('subscribed')
-                    }
-                    
-                    document.querySelectorAll(`.post[data-user-id="${targetUserId}"] .subscribe-btn-inline`).forEach(otherBtn => {
-                        if (data.subscribed) {
-                            otherBtn.textContent = '✓ Подписан'
-                            otherBtn.classList.add('subscribed')
-                        } else {
-                            otherBtn.textContent = '+ Подписаться'
-                            otherBtn.classList.remove('subscribed')
-                        }
-                    })
-                } else {
-                    btn.textContent = originalText
-                    alert('Ошибка: ' + data.error)
-                }
-            } catch (err) {
-                btn.textContent = originalText
-                alert('Ошибка соединения')
-            }
-            
-            btn.disabled = false
-        }
+			const data = await res.json()
+			
+			if (data.success) {
+				btn.closest('.post').remove()
+			} else {
+				alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'))
+			}
+		}
 
-        // ===== УВЕДОМЛЕНИЯ =====
-        async function loadNotificationsCount() {
-            const res = await fetch('/api/notifications', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ action: 'count' })
-            })
-            
-            const data = await res.json()
-            
-            const countSpan = document.getElementById('notificationsCount')
-            if (data.count > 0) {
-                countSpan.textContent = data.count
-                countSpan.style.display = 'inline'
-            } else {
-                countSpan.style.display = 'none'
-            }
-        }
+		// ===== ПОДПИСКА =====
+		async function subscribeFromFeed(e) {
+			const btn = e.currentTarget
+			const targetUserId = parseInt(btn.dataset.userId)
+			
+			const originalText = btn.textContent
+			btn.disabled = true
+			btn.textContent = '...'
+			
+			try {
+				const res = await fetch('/api/user', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						action: 'subscribe',
+						targetUserId: targetUserId
+					})
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error) {
+					if (data.subscribed) {
+						btn.textContent = '✓ Подписан'
+						btn.classList.add('subscribed')
+					} else {
+						btn.textContent = '+ Подписаться'
+						btn.classList.remove('subscribed')
+					}
+					
+					document.querySelectorAll(`.post[data-user-id="${targetUserId}"] .subscribe-btn-inline`).forEach(otherBtn => {
+						if (data.subscribed) {
+							otherBtn.textContent = '✓ Подписан'
+							otherBtn.classList.add('subscribed')
+						} else {
+							otherBtn.textContent = '+ Подписаться'
+							otherBtn.classList.remove('subscribed')
+						}
+					})
+				} else {
+					btn.textContent = originalText
+					alert('Ошибка: ' + data.error)
+				}
+			} catch (err) {
+				btn.textContent = originalText
+				alert('Ошибка соединения')
+			}
+			
+			btn.disabled = false
+		}
 
-        // ===== СЧЁТЧИК ПОЛЬЗОВАТЕЛЕЙ =====
-        async function loadTotalUsers() {
-            try {
-                const res = await fetch('/api/user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'total_users' })
-                })
-                
-                const data = await res.json()
-                
-                if (!data.error) {
-                    document.getElementById('totalUsers').textContent = data.total
-                }
-            } catch (err) {
-                console.error('Ошибка счетчика:', err)
-            }
-        }
+		// ===== УВЕДОМЛЕНИЯ =====
+		async function loadNotificationsCount() {
+			const res = await fetch('/api/notifications', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({ action: 'count' })
+			})
+			
+			const data = await res.json()
+			
+			const countSpan = document.getElementById('notificationsCount')
+			if (data.count > 0) {
+				countSpan.textContent = data.count
+				countSpan.style.display = 'inline'
+			} else {
+				countSpan.style.display = 'none'
+			}
+		}
 
-        // ===== ОБРАБОТЧИКИ =====
-        document.getElementById('filterAll').onclick = () => {
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
-            document.getElementById('filterAll').classList.add('active')
-            currentFilter = 'all'
-            loadPosts(true)
-        }
+		// ===== СЧЁТЧИК ПОЛЬЗОВАТЕЛЕЙ =====
+		async function loadTotalUsers() {
+			try {
+				const res = await fetch('/api/user', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'total_users' })
+				})
+				
+				const data = await res.json()
+				
+				if (!data.error) {
+					document.getElementById('totalUsers').textContent = data.total
+				}
+			} catch (err) {
+				console.error('Ошибка счетчика:', err)
+			}
+		}
 
-        document.getElementById('filterSubs').onclick = () => {
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
-            document.getElementById('filterSubs').classList.add('active')
-            currentFilter = 'subscriptions'
-            loadPosts(true)
-        }
+		// ===== ОБРАБОТЧИКИ =====
+		document.getElementById('filterAll').onclick = () => {
+			document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
+			document.getElementById('filterAll').classList.add('active')
+			currentFilter = 'all'
+			loadPosts(true)
+		}
 
-        document.getElementById('loadMoreBtn').onclick = () => loadPosts()
+		document.getElementById('filterSubs').onclick = () => {
+			document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'))
+			document.getElementById('filterSubs').classList.add('active')
+			currentFilter = 'subscriptions'
+			loadPosts(true)
+		}
 
-        document.getElementById('logoutBtn').onclick = async () => {
-            await fetch('/api/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'logout' })
-            })
-            localStorage.clear()
-            location.href = '/'
-        }
+		document.getElementById('loadMoreBtn').onclick = () => loadPosts()
 
-        document.getElementById('notificationsBell').onclick = () => {
-            location.href = '/notifications.html'
-        }
+		document.getElementById('logoutBtn').onclick = async () => {
+			await fetch('/api/auth', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'logout' })
+			})
+			localStorage.clear()
+			location.href = '/'
+		}
 
-        // ===== ИНИЦИАЛИЗАЦИЯ =====
-        loadWinnerBanner()
-        loadPosts(true)
-        loadNotificationsCount()
-        loadTotalUsers()
-        setInterval(loadNotificationsCount, 30000)
-    </script>
+		document.getElementById('notificationsBell').onclick = () => {
+			location.href = '/notifications.html'
+		}
+
+		// ===== ТЁМНАЯ ТЕМА =====
+		function initTheme() {
+			const themeBtn = document.getElementById('themeToggle')
+			if (!themeBtn) return
+			
+			const isDark = document.documentElement.classList.contains('dark-theme')
+			themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
+			
+			themeBtn.onclick = () => {
+				document.documentElement.classList.toggle('dark-theme')
+				const nowDark = document.documentElement.classList.contains('dark-theme')
+				localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+				themeBtn.textContent = nowDark ? '☀️ Светлая' : '🌙 Тёмная'
+			}
+		}
+
+		// ===== СЛУШАЕМ СООБЩЕНИЯ ОБ ОБНОВЛЕНИИ АВАТАРКИ =====
+		window.addEventListener('message', (event) => {
+			if (event.data === 'avatar_updated') {
+				checkAvatarUpdate()
+				loadPosts(true)
+			}
+		})
+
+		// ===== ИНИЦИАЛИЗАЦИЯ =====
+		loadWinnerBanner()
+		loadPosts(true)
+		loadNotificationsCount()
+		loadTotalUsers()
+		setInterval(loadNotificationsCount, 30000)
+		initTheme()
+	</script>
 </body>
 </html>

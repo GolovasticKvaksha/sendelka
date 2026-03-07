@@ -35,7 +35,7 @@
                     maxlength="600"
                 ></textarea>
 				<!-- БЛОК ДЛЯ ФОТО (ТОЛЬКО ДЛЯ АДМИНОВ) -->
-				<div id="adminPhotoSection" style="display: none;" class="admin-photo-section">
+				<div id="photoSection" class="photo-section">
 					<label class="photo-label">📷 Прикрепить фото (только для админов):</label>
 					<input type="url" id="imageUrl" class="photo-input" 
 						   placeholder="https://... (только .jpg, .png, .gif, .webp)">
@@ -67,10 +67,6 @@
         
         if (!token) location.href = '/login.html'
 		
-		// ⬇️ ПРОВЕРЯЕМ, АДМИН ЛИ ПОЛЬЗОВАТЕЛЬ (ВСТАВЛЯЕМ СЮДА) ⬇️
-        if (user.is_admin) {
-            document.getElementById('adminPhotoSection').style.display = 'block'
-        }
 		
         const contentInput = document.getElementById('content')
         const charCounter = document.getElementById('currentChars')

@@ -377,28 +377,39 @@
         }
 
         window.selectAvatar = async function(number) {
-            const res = await fetch('/api/avatars', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'select',
-                    avatarId: number
-                })
-            })
-            
-            const data = await res.json()
-            
-            if (data.success) {
-                document.getElementById('profileAvatar').src = `/avatars/avatar${number}.jpg`
-                closeAvatarModal()
-                loadAvatarInfo()
-            } else {
-                alert('Ошибка: ' + data.error)
-            }
-        }
+			const res = await fetch('/api/avatars', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'select',
+					avatarId: number
+				})
+			})
+			
+			const data = await res.json()
+			
+			if (data.success) {
+				const newAvatarSrc = `/avatars/avatar${number}.jpg`
+				document.getElementById('profileAvatar').src = newAvatarSrc
+				closeAvatarModal()
+				loadAvatarInfo()
+				
+				// ===== СОХРАНЯЕМ ИНФОРМАЦИЮ ОБ ОБНОВЛЕНИИ =====
+				localStorage.setItem('profileAvatar', newAvatarSrc)
+				localStorage.setItem('avatar_updated_for', currentUser.username)
+				localStorage.setItem('avatar_updated', Date.now())
+				
+				// Если лента открыта в другом окне
+				if (window.opener && !window.opener.closed) {
+					window.opener.postMessage('avatar_updated', '*')
+				}
+			} else {
+				alert('Ошибка: ' + data.error)
+			}
+		}
 
         function openAvatarModal() {
             document.getElementById('avatarModal').style.display = 'flex'
@@ -410,30 +421,39 @@
 
         document.getElementById('closeAvatarModal').onclick = closeAvatarModal
         document.getElementById('uploadAvatarBtn').onclick = async () => {
-            const url = document.getElementById('customAvatarUrl').value.trim()
-            if (!url) return
+			const url = document.getElementById('customAvatarUrl').value.trim()
+			if (!url) return
 
-            const res = await fetch('/api/avatars', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'upload',
-                    imageUrl: url
-                })
-            })
-            
-            const data = await res.json()
-            
-            if (data.success) {
-                document.getElementById('profileAvatar').src = url
-                closeAvatarModal()
-            } else {
-                alert('Ошибка: ' + data.error)
-            }
-        }
+			const res = await fetch('/api/avatars', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					action: 'upload',
+					imageUrl: url
+				})
+			})
+			
+			const data = await res.json()
+			
+			if (data.success) {
+				document.getElementById('profileAvatar').src = url
+				closeAvatarModal()
+				
+				// ===== СОХРАНЯЕМ ИНФОРМАЦИЮ ОБ ОБНОВЛЕНИИ =====
+				localStorage.setItem('profileAvatar', url)
+				localStorage.setItem('avatar_updated_for', currentUser.username)
+				localStorage.setItem('avatar_updated', Date.now())
+				
+				if (window.opener && !window.opener.closed) {
+					window.opener.postMessage('avatar_updated', '*')
+				}
+			} else {
+				alert('Ошибка: ' + data.error)
+			}
+		}
 
         // ===== ПОДПИСКА =====
         async function toggleSubscribe() {
