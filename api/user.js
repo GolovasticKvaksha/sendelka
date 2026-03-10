@@ -12,10 +12,10 @@ export default async function handler(req, res) {
       const currentUserId = req.body.currentUserId
 
       const { data: user, error: userError } = await supabase
-		.from('users')
-		.select('id, username, created_at, subscribers_count, total_likes_received, posts_count, is_admin, bio, avatar, medals_count, season_rank, hide_winner_profile')
-		.eq('username', username)
-		.single()
+        .from('users')
+        .select('id, username, created_at, subscribers_count, total_likes_received, posts_count, is_admin, bio, avatar, medals_count, seasonal_medals, season_rank, hide_winner_profile')
+        .eq('username', username)
+        .single()
 
       if (userError || !user) {
         return res.status(200).json({ error: 'Пользователь не найден' })
@@ -94,73 +94,102 @@ export default async function handler(req, res) {
         return res.status(200).json({ subscribed: true })
       }
     }
-	if (action === 'update_bio') {
-	  const token = getTokenFromHeader(req.headers.authorization)
-	  const userId = verifyToken(token)
 
-	  if (!userId) {
-		return res.status(200).json({ error: 'Не авторизован' })
-	  }
+    // =========================================
+    // ОБНОВИТЬ ОПИСАНИЕ (BIO)
+    // =========================================
+    if (action === 'update_bio') {
+      const token = getTokenFromHeader(req.headers.authorization)
+      const userId = verifyToken(token)
 
-	  const { bio } = req.body
+      if (!userId) {
+        return res.status(200).json({ error: 'Не авторизован' })
+      }
 
-	  // Ограничение длины (например, 200 символов)
-	  if (bio && bio.length > 200) {
-		return res.status(200).json({ error: 'Описание слишком длинное (макс 200 символов)' })
-	  }
+      const { bio } = req.body
 
-	  const { error } = await supabase
-		.from('users')
-		.update({ bio: bio || '' })
-		.eq('id', userId)
+      if (bio && bio.length > 200) {
+        return res.status(200).json({ error: 'Описание слишком длинное (макс 200 символов)' })
+      }
 
-	  if (error) {
-		return res.status(200).json({ error: error.message })
-	  }
+      const { error } = await supabase
+        .from('users')
+        .update({ bio: bio || '' })
+        .eq('id', userId)
 
-	  return res.status(200).json({ success: true, bio })
-	}
-	// =========================================
-	// ПОЛУЧИТЬ КОЛИЧЕСТВО ПОЛЬЗОВАТЕЛЕЙ
-	// =========================================
-	if (action === 'total_users') {
-	  const { count, error } = await supabase
-		.from('users')
-		.select('*', { count: 'exact', head: true })
+      if (error) {
+        return res.status(200).json({ error: error.message })
+      }
 
-	  if (error) {
-		return res.status(200).json({ error: error.message })
-	  }
+      return res.status(200).json({ success: true, bio })
+    }
 
-	  return res.status(200).json({ total: count })
-	}
-	// =========================================
-	// ПОЛУЧИТЬ ПОДПИСКИ ПОЛЬЗОВАТЕЛЯ
-	// =========================================
-	if (action === 'get_subscriptions') {
-	  const token = getTokenFromHeader(req.headers.authorization)
-	  const userId = verifyToken(token)
+    // =========================================
+    // ПОЛУЧИТЬ КОЛИЧЕСТВО ПОЛЬЗОВАТЕЛЕЙ
+    // =========================================
+    if (action === 'total_users') {
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
 
-	  if (!userId) {
-		return res.status(200).json({ error: 'Не авторизован' })
-	  }
+      if (error) {
+        return res.status(200).json({ error: error.message })
+      }
 
-	  try {
-		const { data, error } = await supabase
-		  .from('subscriptions')
-		  .select('following_id')
-		  .eq('follower_id', userId)
+      return res.status(200).json({ total: count })
+    }
 
-		if (error) {
-		  return res.status(200).json({ error: error.message })
-		}
+    // =========================================
+    // ПОЛУЧИТЬ ПОДПИСКИ ПОЛЬЗОВАТЕЛЯ
+    // =========================================
+    if (action === 'get_subscriptions') {
+      const token = getTokenFromHeader(req.headers.authorization)
+      const userId = verifyToken(token)
 
-		return res.status(200).json({ subscriptions: data || [] })
-	  } catch (err) {
-		console.error('Get subscriptions error:', err)
-		return res.status(200).json({ error: 'Internal server error' })
-	  }
-	}
+      if (!userId) {
+        return res.status(200).json({ error: 'Не авторизован' })
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('following_id')
+          .eq('follower_id', userId)
+
+        if (error) {
+          return res.status(200).json({ error: error.message })
+        }
+
+        return res.status(200).json({ subscriptions: data || [] })
+      } catch (err) {
+        console.error('Get subscriptions error:', err)
+        return res.status(200).json({ error: 'Internal server error' })
+      }
+    }
+
+    // =========================================
+    // СКРЫТЬ ПРОФИЛЬ ПОБЕДИТЕЛЯ
+    // =========================================
+    if (action === 'hide_winner_profile') {
+      const token = getTokenFromHeader(req.headers.authorization)
+      const userId = verifyToken(token)
+
+      if (!userId) {
+        return res.status(200).json({ error: 'Не авторизован' })
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update({ hide_winner_profile: true })
+        .eq('id', userId)
+
+      if (error) {
+        return res.status(200).json({ error: error.message })
+      }
+
+      return res.status(200).json({ success: true })
+    }
+
     return res.status(200).json({ error: 'Unknown action' })
 
   } catch (err) {

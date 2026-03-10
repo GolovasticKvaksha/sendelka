@@ -16,19 +16,65 @@
     <div class="container">
         <div class="header">
             <h1>📦 Поиск пользователей</h1>
-            <div class="nav-menu">
-                <a href="lenta.html" class="btn">Лента</a>
-                <a href="profile.html" class="btn">Мой профиль</a>
-                <button id="logoutBtn" class="btn">Выйти</button>
-            </div>
+            <!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+			<div class="top-nav">
+				<a href="lenta.html" class="btn">Лента</a>
+				<a href="profile.html" class="btn">Профиль</a>
+				<a href="search.html" class="btn">Поиск</a>
+				<a href="top.html" class="btn">Топы</a>
+				<a href="create.html" class="btn">Создать</a>
+			</div>
+
+			<!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+			<div class="bottom-nav">
+				<a href="lenta.html" class="nav-item">
+					<span class="nav-icon">📰</span>
+					<span class="nav-label">Лента</span>
+				</a>
+				<a href="profile.html" class="nav-item">
+					<span class="nav-icon">👤</span>
+					<span class="nav-label">Профиль</span>
+				</a>
+				<a href="search.html" class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span class="nav-label">Поиск</span>
+				</a>
+				<a href="top.html" class="nav-item">
+					<span class="nav-icon">🏆</span>
+					<span class="nav-label">Топы</span>
+				</a>
+				<a href="create.html" class="nav-item">
+					<span class="nav-icon">➕</span>
+					<span class="nav-label">Создать</span>
+				</a>
+			</div>
+			<div class="search-header">
+				<h1>🔍 Поиск</h1>
+				<p>Найди друзей по точному никнейму</p>
+			</div>
+
+			<div class="search-box">
+				<div class="search-input-wrapper">
+					<span class="search-icon">🔍</span>
+					<input 
+						type="text" 
+						id="searchInput" 
+						placeholder="Введите никнейм..."
+						autocomplete="off"
+					>
+				</div>
+				<button id="searchBtn" class="search-btn">🔍</button>
+			</div>
+
+			<div id="result" class="search-results">
+				<!-- Результаты поиска -->
+			</div>
+
+
+			<!-- ПЛАВАЮЩАЯ КНОПКА ВЫХОДА -->
+			<button id="logoutBtn" class="logout-btn" title="Выйти">🚪</button>
         </div>
 
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Введите точный username..." autocomplete="off">
-            <button id="searchBtn" class="btn">Найти</button>
-        </div>
-
-        <div id="result" class="search-result"></div>
     </div>
 
 	<script>
@@ -47,11 +93,11 @@
 			const username = searchInput.value.trim()
 			
 			if (!username) {
-				resultDiv.innerHTML = '<p class="error">Введите username</p>'
+				resultDiv.innerHTML = '<div class="search-error">Введите никнейм</div>'
 				return
 			}
 
-			resultDiv.innerHTML = '<p>Ищем...</p>'
+			resultDiv.innerHTML = '<div class="search-loading">🔍 Ищем...</div>'
 
 			try {
 				const res = await fetch('/api/search', {
@@ -63,56 +109,55 @@
 				const data = await res.json()
 
 				if (data.error) {
-					resultDiv.innerHTML = `<p class="error">${data.error}</p>`
+					resultDiv.innerHTML = `<div class="search-error">❌ ${data.error}</div>`
 					return
 				}
 
 				resultDiv.innerHTML = `
-					<div class="user-card">
-						<h3>@${data.username} ${data.is_admin ? '✓' : ''}</h3>
-						<div class="user-stats">
-							<span>📝 ${data.posts_count || 0} постов</span>
-							<span>👥 ${data.subscribers_count || 0} подписчиков</span>
-							<span>❤️ ${data.total_likes_received || 0} лайков</span>
+					<div class="search-user-card">
+						<div class="search-user-header">
+							<img src="${data.avatar?.startsWith('avatar') ? '/avatars/' + data.avatar : data.avatar || '/avatars/avatar1.jpg'}" 
+								 class="search-user-avatar"
+								 onerror="this.src='/avatars/avatar1.jpg'">
+							<div class="search-user-info">
+								<div class="search-user-name">
+									<h3>@${data.username}</h3>
+									${data.is_admin ? '<span class="admin-badge">✓</span>' : ''}
+								</div>
+								<div class="search-user-date">
+									На сайте с ${new Date(data.created_at).toLocaleDateString()}
+								</div>
+							</div>
 						</div>
-						<p>На сайте с: ${new Date(data.created_at).toLocaleDateString()}</p>
-						<a href="profile.html?username=${data.username}" class="btn">Перейти в профиль</a>
+						
+						<div class="search-user-stats">
+							<div class="search-stat-item">
+								<span class="search-stat-value">${data.posts_count || 0}</span>
+								<span class="search-stat-label">постов</span>
+							</div>
+							<div class="search-stat-item">
+								<span class="search-stat-value">${data.subscribers_count || 0}</span>
+								<span class="search-stat-label">подписчиков</span>
+							</div>
+							<div class="search-stat-item">
+								<span class="search-stat-value">${data.total_likes_received || 0}</span>
+								<span class="search-stat-label">лайков</span>
+							</div>
+						</div>
+
+						<a href="profile.html?username=${data.username}" class="search-profile-btn">
+							👤 Перейти в профиль
+						</a>
 					</div>
 				`
 			} catch (err) {
-				resultDiv.innerHTML = '<p class="error">Ошибка соединения</p>'
+				resultDiv.innerHTML = '<div class="search-error">❌ Ошибка соединения</div>'
 			}
 		}
 
 		searchBtn.onclick = searchUser
 		searchInput.onkeypress = (e) => {
 			if (e.key === 'Enter') searchUser()
-		}
-
-		// ===== ТЁМНАЯ ТЕМА =====
-		function initTheme() {
-			const savedTheme = localStorage.getItem('theme')
-			if (savedTheme === 'dark') {
-				document.documentElement.classList.add('dark-theme')
-			}
-			
-			const themeBtn = document.getElementById('themeToggle')
-			if (themeBtn) {
-				const isDark = document.documentElement.classList.contains('dark-theme')
-				themeBtn.textContent = isDark ? '☀️ Светлая' : '🌙 Тёмная'
-				
-				themeBtn.onclick = () => {
-					document.documentElement.classList.toggle('dark-theme')
-					const nowDark = document.documentElement.classList.contains('dark-theme')
-					localStorage.setItem('theme', nowDark ? 'dark' : 'light')
-					themeBtn.textContent = nowDark ? '☀️ Светлая' : '🌙 Тёмная'
-				}
-			}
-		}
-
-		document.getElementById('logoutBtn').onclick = () => {
-			localStorage.clear()
-			location.href = '/'
 		}
 
 		initTheme()

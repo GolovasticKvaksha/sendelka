@@ -22,20 +22,47 @@
         
         <div class="header">
             <h1>📦 Лента</h1>
-            <div class="nav-menu">
-                <a href="create.html" class="btn">Новый пост</a>
-                <a href="profile.html" class="btn">Мой профиль</a>
-                <a href="search.html" class="btn">Поиск</a>
-                <a href="top.html" class="btn">🏆 Топы</a>
-                <button id="themeToggle" class="btn">🌙 Тёмная</button>
-                <button id="logoutBtn" class="btn">Выйти</button>
-            </div>
+			<!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+			<div class="top-nav">
+				<a href="lenta.html" class="btn">📰 Лента</a>
+				<a href="profile.html" class="btn">👤 Профиль</a>
+				<a href="search.html" class="btn">🔍 Поиск</a>
+				<a href="top.html" class="btn">🏆 Топы</a>
+				<a href="create.html" class="btn">➕ Создать</a>
+			</div>
+
+			<!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+			<div class="bottom-nav">
+				<a href="lenta.html" class="nav-item">
+					<span class="nav-icon">📰</span>
+					<span class="nav-label">Лента</span>
+				</a>
+				<a href="profile.html" class="nav-item">
+					<span class="nav-icon">👤</span>
+					<span class="nav-label">Профиль</span>
+				</a>
+				<a href="search.html" class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span class="nav-label">Поиск</span>
+				</a>
+				<a href="top.html" class="nav-item">
+					<span class="nav-icon">🏆</span>
+					<span class="nav-label">Топы</span>
+				</a>
+				<a href="create.html" class="nav-item">
+					<span class="nav-icon">➕</span>
+					<span class="nav-label">Создать</span>
+				</a>
+			</div>
+
+			<!-- ПЛАВАЮЩАЯ КНОПКА ВЫХОДА -->
+			<button id="logoutBtn" class="logout-btn" title="Выйти">🚪</button>
         </div>
 
-        <div id="notificationsBell" class="notifications-bell" style="cursor: pointer;">
-            <span id="notificationsCount" class="notifications-count">0</span>
-            🔔
-        </div>
+		<div id="notificationsBell" class="notifications-bell" onclick="location.href='/notifications.html'">
+			<span id="notificationsCount" class="notifications-count">0</span>
+			🔔
+		</div>
 
         <!-- БАННЕР ПОБЕДИТЕЛЯ (если есть топ-1 и он не скрыл профиль) -->
         <div id="winnerBanner" class="winner-banner" style="display: none;">
@@ -290,7 +317,12 @@
 						
 						<div class="post-actions">
 							<button class="like-btn ${post.isLiked ? 'liked' : ''}" data-post-id="${post.id}">
-								❤️ <span class="likes-count">${post.likes_count || 0}</span>
+								<span class="heart-icon">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+									</svg>
+								</span>
+								<span class="likes-count">${post.likes_count || 0}</span>
 							</button>
 							<span class="views-count">👁️ ${post.views_count || 0}</span>
 							<button class="comments-btn" id="show-comments-btn-${post.id}" 

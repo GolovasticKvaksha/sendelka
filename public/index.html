@@ -1,7 +1,7 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Sendelka</title>
+    <title>Sendelka|Сэнделка</title>
     <link rel="stylesheet" href="style.css">
     <script>
         (function() {
@@ -14,55 +14,145 @@
 </head>
 <body>
     <div class="container">
-        <h1>📦 Sendelka</h1>
-        <p>Социальная сеть. Без лишнего.</p>
-        <div class="buttons">
-            <a href="login.html" class="btn">Вход</a>
-            <a href="register.html" class="btn">Регистрация</a>
-            <a href="lenta.html" class="btn">Лента</a>
+        <!-- ШАПКА -->
+        <div class="index-header">
+            <div class="logo">📦</div>
+            <h1>Sendelka|Сэнделка</h1>
+            <p class="tagline">Независимая Социальная сеть</p>
         </div>
-    </div>
 
-    <!-- КНОПКА ПРАВИЛ -->
-    <div class="rules-section">
-        <button id="toggleRulesBtn" class="btn rules-btn">📜 Правила</button>
-        
-        <!-- ТЕКСТ ПРАВИЛ (ИЗНАЧАЛЬНО СКРЫТ) -->
-        <div id="rulesText" class="rules-text" style="display: none;">
-            <h3>Привет, друг!!!</h3>
-			<h4>Здесь прописано всё, что тебе нужно знать заходя на сайт</h4>
-            <p>1. Весь контент модерируется</p>
-            <p>1.1. Администратор(у него галочка) может удалить и забанить пользователя без указания причины</p>
-            <p>1.2. Администратор придерживается моральных и эстетических норм при модерации</p>
-            <p></p>
-            <p>2. Авторское право</p>
-			<p>2.1. Весь контент(не относящиеся к пунтку 2.2), публикуемый в Sendelka может быть использован ЛЮБЫМИ лицами</p>
-			<p>2.2. Все посты с пометкой "#некрастьпж" фиксируются мозгом Администрации, и посты, использующие этот контент, могут быть удалены</p>
-			<p></p>
-			<p>3. Об аккаунтах</p>
-			<p>3.1. При регистрации собирается информация о пользователе(Ник, зашифрованный пароль, ip адрес)</p>
-			<p>3.2. НИКТО не имеет права разглашать информацию о пароле или ip адресе пользователя</p>
-            <p class="rules-footer-note">Данная информация является лишь предупреждением для пользователя</p>
+        <!-- ОСНОВНОЙ БЛОК -->
+        <div class="index-card" id="mainCard">
+            <!-- КОНТЕНТ БУДЕТ МЕНЯТЬСЯ В ЗАВИСИМОСТИ ОТ ТОГО, ВОШЁЛ ЛИ ПОЛЬЗОВАТЕЛЬ -->
+        </div>
+
+        <!-- КНОПКА ТЕМЫ -->
+        <div class="theme-toggle">
+            <button id="themeToggle" class="theme-btn">
+                <span class="theme-icon">🌙</span>
+                <span class="theme-text">Тёмная тема</span>
+            </button>
+        </div>
+
+        <!-- ПРАВИЛА -->
+        <div class="rules-section">
+            <button id="toggleRulesBtn" class="rules-btn">📜 Правила</button>
+            <div id="rulesText" class="rules-text" style="display: none;">
+                <h3>Привет, друг!!!</h3>
+				<h4>Здесь прописано всё, что тебе нужно знать заходя на сайт</h4>
+				<p>1. Весь контент модерируется</p>
+				<p>1.1. Администратор(у него галочка) может удалить и забанить пользователя без указания причины</p>
+				<p>1.2. Администратор придерживается моральных и эстетических норм при модерации</p>
+				<p></p>
+				<p>2. Авторское право</p>
+				<p>2.1. Весь контент(не относящиеся к пунтку 2.2), публикуемый в Sendelka может быть использован ЛЮБЫМИ лицами</p>
+				<p>2.2. Все посты с пометкой "#некрастьпж" фиксируются мозгом Администрации, и посты, использующие этот контент, могут быть удалены</p>
+				<p></p>
+				<p>3. Об аккаунтах</p>
+				<p>3.1. При регистрации собирается информация о пользователе(Ник, зашифрованный пароль, ip адрес)</p>
+				<p>3.2. НИКТО не имеет права разглашать информацию о пароле или ip адресе пользователя</p>
+				<p class="rules-footer-note">Данная информация является лишь предупреждением для пользователя</p>
+            </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleBtn = document.getElementById('toggleRulesBtn')
+        // Проверяем, есть ли уже авторизация
+        const token = localStorage.getItem('token')
+        const user = JSON.parse(localStorage.getItem('user') || '{}')
+        
+        const mainCard = document.getElementById('mainCard')
+
+        if (token && user.username) {
+            // ПОЛЬЗОВАТЕЛЬ УЖЕ ВОШЁЛ
+            mainCard.innerHTML = `
+                <div class="welcome-section">
+                    <div class="welcome-avatar">
+                        <img src="/avatars/avatar1.jpg" class="welcome-avatar-img" 
+                             onerror="this.src='/avatars/avatar1.jpg'">
+                    </div>
+                    <h2>С возвращением, @${user.username}!</h2>
+                    <p class="welcome-text">Ты уже в системе</p>
+                </div>
+
+                <div class="quick-actions">
+                    <a href="lenta.html" class="quick-action-btn primary">
+                        <span class="quick-icon">📰</span>
+                        <span class="quick-label">Лента</span>
+                    </a>
+                    <a href="profile.html" class="quick-action-btn">
+                        <span class="quick-icon">👤</span>
+                        <span class="quick-label">Профиль</span>
+                    </a>
+                    <a href="create.html" class="quick-action-btn">
+                        <span class="quick-icon">➕</span>
+                        <span class="quick-label">Создать</span>
+                    </a>
+                </div>
+
+                <div class="index-divider">
+                    <span>или</span>
+                </div>
+
+                <div class="guest-section">
+                    <a href="lenta.html" class="guest-link">📰 Перейти в ленту</a>
+                </div>
+            `
+        } else {
+            // ГОСТЬ (НЕ ВОШЁЛ)
+            mainCard.innerHTML = `
+                <div class="index-features">
+                    <div class="feature">
+                        <span class="feature-icon">👥</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🏆</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🌓</span>
+                    </div>
+                </div>
+
+                <div class="index-buttons">
+                    <a href="login.html" class="index-btn primary">🔑 Вход</a>
+                    <a href="register.html" class="index-btn secondary">📝 Регистрация</a>
+                </div>
+
+            `
+        }
+
+        document.getElementById('toggleRulesBtn').onclick = () => {
             const rulesText = document.getElementById('rulesText')
+            const btn = document.getElementById('toggleRulesBtn')
             
-            if (toggleBtn) {
-                toggleBtn.onclick = () => {
-                    if (rulesText.style.display === 'none') {
-                        rulesText.style.display = 'block'
-                        toggleBtn.textContent = '📜 Скрыть'
-                    } else {
-                        rulesText.style.display = 'none'
-                        toggleBtn.textContent = '📜 Пользовательское соглашение'
-                    }
-                }
+            if (rulesText.style.display === 'none') {
+                rulesText.style.display = 'block'
+                btn.textContent = '📜 Скрыть правила'
+            } else {
+                rulesText.style.display = 'none'
+                btn.textContent = '📜 Правила'
             }
-        })
+        }
+
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            const themeIcon = themeBtn.querySelector('.theme-icon')
+            const themeText = themeBtn.querySelector('.theme-text')
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeIcon.textContent = isDark ? '☀️' : '🌙'
+            themeText.textContent = isDark ? 'Светлая тема' : 'Тёмная тема'
+            
+            themeBtn.onclick = () => {
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeIcon.textContent = nowDark ? '☀️' : '🌙'
+                themeText.textContent = nowDark ? 'Светлая тема' : 'Тёмная тема'
+            }
+        }
+	
+        initTheme()
     </script>
 </body>
 </html>

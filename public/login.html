@@ -1,27 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script>
-		(function() {
-			const savedTheme = localStorage.getItem('theme')
-			if (savedTheme === 'dark') {
-				document.documentElement.classList.add('dark-theme')
-			}
-		})()
-	</script>
     <title>Вход | Sendelka</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme')
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-theme')
+            }
+        })()
+    </script>
 </head>
 <body>
     <div class="container">
-        <h1>📦 Вход</h1>
-        <form id="loginForm">
-            <input type="text" id="username" placeholder="Никнейм" required>
-            <input type="password" id="password" placeholder="Пароль" required>
-            <button type="submit">Войти</button>
-        </form>
-        <p>Нет аккаунта? <a href="register.html">Регистрация</a></p>
-        <div id="error" class="error"></div>
+        <div class="auth-header">
+            <h1>📦 Sendelka</h1>
+            <p>Войди в своё сообщество</p>
+        </div>
+
+        <div class="auth-card">
+            <h2>Вход</h2>
+            
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Никнейм</label>
+                    <input type="text" id="username" placeholder="Введите никнейм" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Введите пароль" required>
+                </div>
+
+                <button type="submit" class="auth-btn">Войти</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Нет аккаунта? <a href="register.html">Зарегистрироваться</a></p>
+            </div>
+
+            <div id="error" class="auth-error"></div>
+        </div>
+
+        <!-- КНОПКА ТЕМЫ ВРЕМЕННО ЗДЕСЬ -->
+        <div class="theme-toggle">
+            <button id="themeToggle" class="theme-btn">
+                <span class="theme-icon">🌙</span>
+                <span class="theme-text">Тёмная тема</span>
+            </button>
+        </div>
     </div>
 
     <script>
@@ -48,6 +76,26 @@
                 document.getElementById('error').textContent = data.error
             }
         }
+
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            const themeIcon = themeBtn.querySelector('.theme-icon')
+            const themeText = themeBtn.querySelector('.theme-text')
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeIcon.textContent = isDark ? '☀️' : '🌙'
+            themeText.textContent = isDark ? 'Светлая тема' : 'Тёмная тема'
+            
+            themeBtn.onclick = () => {
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeIcon.textContent = nowDark ? '☀️' : '🌙'
+                themeText.textContent = nowDark ? 'Светлая тема' : 'Тёмная тема'
+            }
+        }
+
+        initTheme()
     </script>
 </body>
 </html>

@@ -16,13 +16,47 @@
     <div class="container">
         <div class="header">
             <h1>🏆 Топы Sendelka</h1>
-            <div class="nav-menu">
-                <a href="lenta.html" class="btn">Лента</a>
-                <a href="profile.html" class="btn">Профиль</a>
-                <a href="search.html" class="btn">Поиск</a>
-                <button id="themeToggle" class="btn">🌙 Тёмная</button>
-                <button id="logoutBtn" class="btn">Выйти</button>
-            </div>
+            <!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+			<div class="top-nav">
+				<a href="lenta.html" class="btn">Лента</a>
+				<a href="profile.html" class="btn">Профиль</a>
+				<a href="search.html" class="btn">Поиск</a>
+				<a href="top.html" class="btn">Топы</a>
+				<a href="create.html" class="btn">Создать</a>
+			</div>
+
+			<!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+			<div class="bottom-nav">
+				<a href="lenta.html" class="nav-item">
+					<span class="nav-icon">📰</span>
+					<span class="nav-label">Лента</span>
+				</a>
+				<a href="profile.html" class="nav-item">
+					<span class="nav-icon">👤</span>
+					<span class="nav-label">Профиль</span>
+				</a>
+				<a href="search.html" class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span class="nav-label">Поиск</span>
+				</a>
+				<a href="top.html" class="nav-item">
+					<span class="nav-icon">🏆</span>
+					<span class="nav-label">Топы</span>
+				</a>
+				<a href="create.html" class="nav-item">
+					<span class="nav-icon">➕</span>
+					<span class="nav-label">Создать</span>
+				</a>
+			</div>
+
+			<!-- ПЛАВАЮЩАЯ КНОПКА ВЫХОДА -->
+			<button id="logoutBtn" class="logout-btn" title="Выйти">🚪</button>
+
+			<!-- КОЛОКОЛЬЧИК (ЕСЛИ НУЖЕН) -->
+			<div id="notificationsBell" class="notifications-bell">
+				<span id="notificationsCount" class="notifications-count">0</span>
+				🔔
+			</div>
         </div>
 
         <div class="top-categories">
@@ -103,6 +137,12 @@
                 else if (place === 2) medalEmoji = '🥈'
                 else if (place === 3) medalEmoji = '🥉'
                 
+                // Определяем значение для отображения в зависимости от категории
+                let statValue = 0
+                if (currentCategory === 'subscribers') statValue = userItem.subscribers_count || 0
+                else if (currentCategory === 'posts') statValue = userItem.posts_count || 0
+                else statValue = userItem.seasonal_medals || 0  // ← используем seasonal_medals с проверкой
+                
                 list.innerHTML += `
                     <div class="top-item ${place <= 3 ? 'top-' + place : ''}">
                         <div class="top-place">
@@ -116,9 +156,9 @@
                             @${userItem.username}
                         </a>
                         <div class="top-stat">
-                            ${currentCategory === 'subscribers' ? `👥 ${userItem.subscribers_count}` :
-                              currentCategory === 'posts' ? `📝 ${userItem.posts_count}` :
-                              `🏅 ${userItem.medals_count}`}
+                            ${currentCategory === 'subscribers' ? `👥 ${statValue}` :
+                              currentCategory === 'posts' ? `📝 ${statValue}` :
+                              `🏅 ${statValue}`}
                         </div>
                         ${userItem.status_text ? `<div class="top-status">${userItem.status_text}</div>` : ''}
                     </div>
@@ -128,6 +168,7 @@
             hasMore = data.hasMore
             document.getElementById('loadMoreTopBtn').style.display = hasMore ? 'block' : 'none'
             currentOffset += 10
+			loadNotificationsCount()
         }
 
         // ===== ПЕРЕКЛЮЧЕНИЕ КАТЕГОРИЙ =====
@@ -202,7 +243,33 @@
             localStorage.clear()
             location.href = '/'
         }
+		async function loadNotificationsCount() {
+			try {
+				const res = await fetch('/api/notifications', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({ action: 'count' })
+				})
+				
+				const data = await res.json()
+				
+				const countSpan = document.getElementById('notificationsCount')
+				if (data.count > 0) {
+					countSpan.textContent = data.count
+					countSpan.style.display = 'inline'
+				} else {
+					countSpan.style.display = 'none'
+				}
+			} catch (err) {
+				console.error('Ошибка загрузки уведомлений:', err)
+			}
+		}
 
+		// Обновлять каждые 30 секунд
+		setInterval(loadNotificationsCount, 30000)
         loadTop(true)
         initTheme()
     </script>

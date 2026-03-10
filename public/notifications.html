@@ -14,22 +14,60 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📦 Уведомления</h1>
-            <div class="nav-menu">
+        <div class="notifications-header">
+            <h1>🔔 Уведомления</h1>
+            
+            <!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+            <div class="top-nav">
                 <a href="lenta.html" class="btn">Лента</a>
                 <a href="profile.html" class="btn">Профиль</a>
                 <a href="search.html" class="btn">Поиск</a>
-                <a href="top.html" class="btn">🏆 Топы</a>
-                <button id="logoutBtn" class="btn">Выйти</button>
+                <a href="top.html" class="btn">Топы</a>
+                <a href="create.html" class="btn">Создать</a>
             </div>
+
+            <!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+            <div class="bottom-nav">
+                <a href="lenta.html" class="nav-item">
+                    <span class="nav-icon">📰</span>
+                    <span class="nav-label">Лента</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Профиль</span>
+                </a>
+                <a href="search.html" class="nav-item">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-label">Поиск</span>
+                </a>
+                <a href="top.html" class="nav-item">
+                    <span class="nav-icon">🏆</span>
+                    <span class="nav-label">Топы</span>
+                </a>
+                <a href="create.html" class="nav-item">
+                    <span class="nav-icon">➕</span>
+                    <span class="nav-label">Создать</span>
+                </a>
+                <a href="#" class="nav-item" id="themeToggle">
+                    <span class="nav-icon">🌙</span>
+                    <span class="nav-label">Тема</span>
+                </a>
+            </div>
+
+            <!-- ПЛАВАЮЩАЯ КНОПКА ВЫХОДА -->
+            <button id="logoutBtn" class="logout-btn" title="Выйти">🚪</button>
         </div>
 
-        <div class="notifications-header">
-            <button id="markAllRead" class="btn">✅ Все прочитано</button>
+        <!-- ЗАГОЛОВОК СТРАНИЦЫ -->
+        <div class="page-header">
+            <h2>Последние события</h2>
+            <button id="markAllRead" class="btn btn-small">✅ Все прочитано</button>
         </div>
 
-        <div id="notificationsList" class="notifications-list"></div>
+        <!-- СПИСОК УВЕДОМЛЕНИЙ -->
+        <div id="notificationsList" class="notifications-list">
+            <!-- Уведомления подгрузятся сюда -->
+        </div>
     </div>
 
     <script>
@@ -51,60 +89,47 @@
             const notifications = await res.json()
             
             if (notifications.error) {
-                document.getElementById('notificationsList').innerHTML = `<p class="error">${notifications.error}</p>`
+                document.getElementById('notificationsList').innerHTML = `<div class="error">${notifications.error}</div>`
                 return
             }
 
             const listDiv = document.getElementById('notificationsList')
             
             if (!notifications.length) {
-                listDiv.innerHTML = '<p class="empty-state">Уведомлений пока нет</p>'
+                listDiv.innerHTML = `
+                    <div class="empty-notifications">
+                        <div class="empty-icon">🔔</div>
+                        <h3>Уведомлений пока нет</h3>
+                        <p>Здесь будут появляться новые события</p>
+                    </div>
+                `
                 return
             }
 
             listDiv.innerHTML = notifications.map(n => {
-                // Определяем текст уведомления
-                let notificationText = ''
-                
-                if (n.content) {
-                    // Если есть готовый текст - используем его
-                    notificationText = n.content
-                } else {
-                    // Если нет - формируем по типу
-                    switch(n.type) {
-                        case 'like':
-                            notificationText = `❤️ <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> лайкнул твой пост`
-                            break
-                        case 'subscribe':
-                            notificationText = `👤 <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> подписался на тебя`
-                            break
-                        case 'referral':
-                            notificationText = `👤 <strong>@${n.from_user_id?.username || 'Кто-то'}</strong> зарегистрировался по твоей ссылке`
-                            break
-                        case 'avatar':
-                            notificationText = `✨ Открыта новая аватарка!`
-                            break
-                        case 'medal':
-                            notificationText = `🏅 +1 медаль! Твой реферал привёл 4 человека`
-                            break
-                        default:
-                            notificationText = 'Новое уведомление'
-                    }
+                // Определяем иконку по типу
+                let icon = '📌'
+                switch(n.type) {
+                    case 'like': icon = '❤️'; break
+                    case 'subscribe': icon = '👤'; break
+                    case 'referral': icon = '🔗'; break
+                    case 'avatar': icon = '🖼️'; break
+                    case 'medal': icon = '🏅'; break
                 }
                 
                 return `
-                    <div class="notification ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
+                    <div class="notification-item ${n.is_read ? 'read' : 'unread'}" data-id="${n.id}">
+                        <div class="notification-icon">${icon}</div>
                         <div class="notification-content">
-                            ${notificationText}
+                            <div class="notification-text">${n.content || 'Новое уведомление'}</div>
+                            <div class="notification-time">${new Date(n.created_at).toLocaleString()}</div>
                         </div>
-                        <div class="notification-time">
-                            ${new Date(n.created_at).toLocaleString()}
-                        </div>
+                        ${!n.is_read ? '<span class="notification-dot"></span>' : ''}
                     </div>
                 `
             }).join('')
 
-            // Отмечаем как прочитанные при просмотре
+            // Автоматически отмечаем прочитанными
             notifications.forEach(n => {
                 if (!n.is_read) markAsRead(n.id)
             })
@@ -131,7 +156,7 @@
                 body: JSON.stringify({ action: 'readAll' })
             })
             
-            document.querySelectorAll('.notification').forEach(n => {
+            document.querySelectorAll('.notification-item').forEach(n => {
                 n.classList.remove('unread')
                 n.classList.add('read')
             })
@@ -142,7 +167,28 @@
             location.href = '/'
         }
 
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            if (!themeBtn) return
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeBtn.innerHTML = isDark ? 
+                '<span class="nav-icon">☀️</span><span class="nav-label">Светлая</span>' : 
+                '<span class="nav-icon">🌙</span><span class="nav-label">Тёмная</span>'
+            
+            themeBtn.onclick = (e) => {
+                e.preventDefault()
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeBtn.innerHTML = nowDark ? 
+                    '<span class="nav-icon">☀️</span><span class="nav-label">Светлая</span>' : 
+                    '<span class="nav-icon">🌙</span><span class="nav-label">Тёмная</span>'
+            }
+        }
+
         loadNotifications()
+        initTheme()
     </script>
 </body>
 </html>

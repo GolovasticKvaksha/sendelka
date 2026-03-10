@@ -16,15 +16,52 @@
     <div class="container">
         <div class="header">
             <h1>📦 Профиль</h1>
-            <div class="nav-menu">
-                <a href="lenta.html" class="btn">Лента</a>
-                <a href="create.html" class="btn">Новый пост</a>
-                <a href="search.html" class="btn">Поиск</a>
-                <a href="top.html" class="btn">🏆 Топы</a>
-                <button id="themeToggle" class="btn">🌙 Тёмная</button>
-                <button id="logoutBtn" class="btn">Выйти</button>
-            </div>
+            <!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+			<div class="top-nav">
+				<a href="lenta.html" class="btn">Лента</a>
+				<a href="profile.html" class="btn">Профиль</a>
+				<a href="search.html" class="btn">Поиск</a>
+				<a href="top.html" class="btn">Топы</a>
+				<a href="create.html" class="btn">Создать</a>
+			</div>
+
+			<!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+			<div class="bottom-nav">
+				<a href="lenta.html" class="nav-item">
+					<span class="nav-icon">📰</span>
+					<span class="nav-label">Лента</span>
+				</a>
+				<a href="profile.html" class="nav-item">
+					<span class="nav-icon">👤</span>
+					<span class="nav-label">Профиль</span>
+				</a>
+				<a href="search.html" class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span class="nav-label">Поиск</span>
+				</a>
+				<a href="top.html" class="nav-item">
+					<span class="nav-icon">🏆</span>
+					<span class="nav-label">Топы</span>
+				</a>
+				<a href="create.html" class="nav-item">
+					<span class="nav-icon">➕</span>
+					<span class="nav-label">Создать</span>
+				</a>
+				<a href="#" class="nav-item" id="themeToggle">
+					<span class="nav-icon">🌙</span>
+					<span class="nav-label">Тема</span>
+				</a>
+			</div>
+
+			<!-- ПЛАВАЮЩАЯ КНОПКА ВЫХОДА -->
+			<button id="logoutBtn" class="logout-btn" title="Выйти">🚪</button>
+
         </div>
+
+		<div id="notificationsBell" class="notifications-bell" onclick="location.href='/notifications.html'">
+			<span id="notificationsCount" class="notifications-count">0</span>
+			🔔
+		</div>
 
         <!-- АВАТАРКА И НИК -->
         <div class="profile-header">
@@ -54,8 +91,13 @@
             </div>
             <div class="stat">
                 <span class="stat-value" id="medalsCount">0</span>
-                <span class="stat-label">медалей</span>
+                <span class="stat-label">всего медалей</span>
             </div>
+        </div>
+
+        <!-- МЕСТО В ТОПЕ -->
+        <div id="rankContainer" class="rank-container" style="display: none;">
+            <div class="rank-badge" id="rankDisplay"></div>
         </div>
 
         <!-- СТАТУС (если есть) -->
@@ -82,13 +124,13 @@
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ МЕДАЛЕЙ (под описанием) -->
+        <!-- ПАНЕЛЬ МЕДАЛЕЙ -->
         <div id="medalsPanel" class="medals-panel">
             <div class="medals-stats">
                 <div class="medal-stat">
                     <span class="medal-icon">🏅</span>
-                    <span class="medal-value" id="totalMedals">0</span>
-                    <span class="medal-label">всего</span>
+                    <span class="medal-value" id="seasonalMedals">0</span>
+                    <span class="medal-label">сезонных</span>
                 </div>
                 <div class="medal-stat">
                     <span class="medal-icon">📊</span>
@@ -96,7 +138,6 @@
                     <span class="medal-label">место в топе</span>
                 </div>
             </div>
-            <!-- КНОПКА УБРАТЬ ПРОФИЛЬ ПОБЕДИТЕЛЯ (только для топ-1) -->
             <button id="hideWinnerBtn" class="btn btn-warning" style="display: none;">
                 🚫 Убрать профиль из ленты
             </button>
@@ -111,8 +152,6 @@
                 </div>
                 <div class="modal-body">
                     <div class="avatars-grid" id="avatarsGrid"></div>
-                    
-                    <!-- БЛОК ЗАГРУЗКИ СВОЕЙ АВАТАРКИ -->
                     <div id="uploadAvatarSection" class="upload-section" style="display: none;">
                         <h4>Загрузить свою аватарку</h4>
                         <input type="url" id="customAvatarUrl" class="avatar-input" 
@@ -137,7 +176,6 @@
         const username = urlParams.get('username') || currentUser.username
         const isOwnProfile = currentUser.username === username
 
-        // ===== ЗАГРУЗКА ПРОФИЛЯ =====
         async function loadProfile() {
             const res = await fetch('/api/user', {
                 method: 'POST',
@@ -167,7 +205,6 @@
 
             // ===== НИК =====
             document.getElementById('profileUsername').innerHTML = `@${profile.username}`
-            
             if (profile.is_admin) {
                 document.getElementById('adminBadge').style.display = 'inline'
             }
@@ -176,22 +213,22 @@
             document.getElementById('postsCount').textContent = profile.posts_count || 0
             document.getElementById('subscribersCount').textContent = profile.subscribers_count || 0
             document.getElementById('likesCount').textContent = profile.total_likes_received || 0
-            document.getElementById('medalsCount').textContent = profile.medals_count || 0
+            document.getElementById('medalsCount').textContent = profile.medals_count || 0  // общие медали
 
             // ===== МЕСТО В ТОПЕ =====
+            const seasonalMedals = profile.seasonal_medals || 0
             if (profile.season_rank) {
                 let medalEmoji = ''
                 if (profile.season_rank === 1) medalEmoji = '🥇'
                 else if (profile.season_rank === 2) medalEmoji = '🥈'
                 else if (profile.season_rank === 3) medalEmoji = '🥉'
                 
-                const profileInfo = document.getElementById('profileInfo')
-                if (profileInfo) {
-                    profileInfo.innerHTML += `
-                        <div class="rank-badge">
-                            ${medalEmoji} Место в топе: #${profile.season_rank}
-                        </div>
-                    `
+                const rankContainer = document.getElementById('rankContainer')
+                const rankDisplay = document.getElementById('rankDisplay')
+                
+                if (rankContainer && rankDisplay) {
+                    rankDisplay.innerHTML = `${medalEmoji} Место в топе: #${profile.season_rank} (${seasonalMedals}🏅)`
+                    rankContainer.style.display = 'block'
                 }
             }
 
@@ -210,11 +247,11 @@
                 document.getElementById('subscribeBtnAction').onclick = toggleSubscribe
             }
 
-            // ===== ОПИСАНИЕ (BIO) =====
+            // ===== ОПИСАНИЕ =====
             renderBio(profile)
 
             // ===== ПАНЕЛЬ МЕДАЛЕЙ =====
-            document.getElementById('totalMedals').textContent = profile.medals_count || 0
+            document.getElementById('seasonalMedals').textContent = profile.seasonal_medals || 0  // сезонные медали
             document.getElementById('currentRank').textContent = profile.season_rank || '—'
 
             if (isOwnProfile && profile.season_rank === 1 && !profile.hide_winner_profile) {
@@ -257,9 +294,9 @@
             } else {
                 postsDiv.innerHTML = '<p>У пользователя пока нет постов</p>'
             }
+			loadNotificationsCount()
         }
 
-        // ===== ОПИСАНИЕ (BIO) =====
         function renderBio(profile) {
             const bioDisplay = document.getElementById('bioDisplay')
             const bioEdit = document.getElementById('bioEdit')
@@ -284,11 +321,9 @@
                     if (bioCounter) bioCounter.textContent = bioInput.value.length
                 }
                 
-                if (bioInput) {
-                    bioInput.addEventListener('input', () => {
-                        if (bioCounter) bioCounter.textContent = bioInput.value.length
-                    })
-                }
+                bioInput?.addEventListener('input', () => {
+                    if (bioCounter) bioCounter.textContent = bioInput.value.length
+                })
                 
                 document.getElementById('saveBioBtn').onclick = async () => {
                     const newBio = bioInput.value.trim()
@@ -324,7 +359,6 @@
             }
         }
 
-        // ===== АВАТАРКИ =====
         async function loadAvatarInfo() {
             const res = await fetch('/api/avatars', {
                 method: 'POST',
@@ -336,7 +370,6 @@
             })
             
             const data = await res.json()
-            
             if (!data.error) {
                 window.avatarInfo = data
                 renderAvatarModal()
@@ -377,39 +410,37 @@
         }
 
         window.selectAvatar = async function(number) {
-			const res = await fetch('/api/avatars', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
-				},
-				body: JSON.stringify({
-					action: 'select',
-					avatarId: number
-				})
-			})
-			
-			const data = await res.json()
-			
-			if (data.success) {
-				const newAvatarSrc = `/avatars/avatar${number}.jpg`
-				document.getElementById('profileAvatar').src = newAvatarSrc
-				closeAvatarModal()
-				loadAvatarInfo()
-				
-				// ===== СОХРАНЯЕМ ИНФОРМАЦИЮ ОБ ОБНОВЛЕНИИ =====
-				localStorage.setItem('profileAvatar', newAvatarSrc)
-				localStorage.setItem('avatar_updated_for', currentUser.username)
-				localStorage.setItem('avatar_updated', Date.now())
-				
-				// Если лента открыта в другом окне
-				if (window.opener && !window.opener.closed) {
-					window.opener.postMessage('avatar_updated', '*')
-				}
-			} else {
-				alert('Ошибка: ' + data.error)
-			}
-		}
+            const res = await fetch('/api/avatars', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'select',
+                    avatarId: number
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                const newAvatarSrc = `/avatars/avatar${number}.jpg`
+                document.getElementById('profileAvatar').src = newAvatarSrc
+                closeAvatarModal()
+                loadAvatarInfo()
+                
+                localStorage.setItem('profileAvatar', newAvatarSrc)
+                localStorage.setItem('avatar_updated_for', currentUser.username)
+                localStorage.setItem('avatar_updated', Date.now())
+                
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage('avatar_updated', '*')
+                }
+            } else {
+                alert('Ошибка: ' + data.error)
+            }
+        }
 
         function openAvatarModal() {
             document.getElementById('avatarModal').style.display = 'flex'
@@ -421,41 +452,39 @@
 
         document.getElementById('closeAvatarModal').onclick = closeAvatarModal
         document.getElementById('uploadAvatarBtn').onclick = async () => {
-			const url = document.getElementById('customAvatarUrl').value.trim()
-			if (!url) return
+            const url = document.getElementById('customAvatarUrl').value.trim()
+            if (!url) return
 
-			const res = await fetch('/api/avatars', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`
-				},
-				body: JSON.stringify({
-					action: 'upload',
-					imageUrl: url
-				})
-			})
-			
-			const data = await res.json()
-			
-			if (data.success) {
-				document.getElementById('profileAvatar').src = url
-				closeAvatarModal()
-				
-				// ===== СОХРАНЯЕМ ИНФОРМАЦИЮ ОБ ОБНОВЛЕНИИ =====
-				localStorage.setItem('profileAvatar', url)
-				localStorage.setItem('avatar_updated_for', currentUser.username)
-				localStorage.setItem('avatar_updated', Date.now())
-				
-				if (window.opener && !window.opener.closed) {
-					window.opener.postMessage('avatar_updated', '*')
-				}
-			} else {
-				alert('Ошибка: ' + data.error)
-			}
-		}
+            const res = await fetch('/api/avatars', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: 'upload',
+                    imageUrl: url
+                })
+            })
+            
+            const data = await res.json()
+            
+            if (data.success) {
+                document.getElementById('profileAvatar').src = url
+                closeAvatarModal()
+                
+                localStorage.setItem('profileAvatar', url)
+                localStorage.setItem('avatar_updated_for', currentUser.username)
+                localStorage.setItem('avatar_updated', Date.now())
+                
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage('avatar_updated', '*')
+                }
+            } else {
+                alert('Ошибка: ' + data.error)
+            }
+        }
 
-        // ===== ПОДПИСКА =====
         async function toggleSubscribe() {
             const btn = document.getElementById('subscribeBtnAction')
             const originalText = btn.textContent
@@ -489,7 +518,6 @@
             btn.disabled = false
         }
 
-        // ===== КНОПКА УБРАТЬ ПРОФИЛЬ ПОБЕДИТЕЛЯ =====
         document.getElementById('hideWinnerBtn').onclick = async () => {
             if (!confirm('Убрать свой профиль из ленты? Это действие нельзя отменить.')) return
             
@@ -512,7 +540,6 @@
             }
         }
 
-        // ===== ТЁМНАЯ ТЕМА =====
         function initTheme() {
             const themeBtn = document.getElementById('themeToggle')
             if (!themeBtn) return
@@ -532,7 +559,33 @@
             localStorage.clear()
             location.href = '/'
         }
+		async function loadNotificationsCount() {
+			try {
+				const res = await fetch('/api/notifications', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({ action: 'count' })
+				})
+				
+				const data = await res.json()
+				
+				const countSpan = document.getElementById('notificationsCount')
+				if (data.count > 0) {
+					countSpan.textContent = data.count
+					countSpan.style.display = 'inline'
+				} else {
+					countSpan.style.display = 'none'
+				}
+			} catch (err) {
+				console.error('Ошибка загрузки уведомлений:', err)
+			}
+		}
 
+		// Обновлять каждые 30 секунд
+		setInterval(loadNotificationsCount, 30000)
         loadProfile()
         initTheme()
     </script>

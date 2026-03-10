@@ -38,13 +38,14 @@ export default async function handler(req, res) {
                 case 'medals':
                     query = supabase
                         .from('users')
-                        .select('id, username, avatar, subscribers_count, posts_count, medals_count, status_text')
-                        .order('medals_count', { ascending: false })
+                        .select('id, username, avatar, subscribers_count, posts_count, seasonal_medals, status_text')
+                        .order('seasonal_medals', { ascending: false, nulls_last: true })
                         .range(offset, offset + limit - 1)
                     
                     countQuery = supabase
                         .from('users')
                         .select('*', { count: 'exact', head: true })
+                        .gt('seasonal_medals', 0)
                     break
 
                 default:
@@ -58,7 +59,6 @@ export default async function handler(req, res) {
                 return res.status(200).json({ error: error.message })
             }
 
-            // Максимум 30 для топов с подгрузкой
             const maxLimit = 30
             const hasMore = offset + limit < count && offset + limit < maxLimit
 
@@ -70,107 +70,116 @@ export default async function handler(req, res) {
         }
 
         // ===== СБРОСИТЬ СЕЗОН (ТОЛЬКО АДМИН) =====
-        if (action === 'reset_season') {
-            const token = getTokenFromHeader(req.headers.authorization)
-            const userId = verifyToken(token)
+		if (action === 'reset_season') {
+			const token = getTokenFromHeader(req.headers.authorization)
+			const userId = verifyToken(token)
 
-            if (!userId) {
-                return res.status(200).json({ error: 'Не авторизован' })
-            }
+			if (!userId) {
+				return res.status(200).json({ error: 'Не авторизован' })
+			}
 
-            // Проверяем админа
-            const { data: user } = await supabase
-                .from('users')
-                .select('is_admin')
-                .eq('id', userId)
-                .single()
+			const { data: user } = await supabase
+				.from('users')
+				.select('is_admin')
+				.eq('id', userId)
+				.single()
 
-            if (!user?.is_admin) {
-                return res.status(200).json({ error: 'Недостаточно прав' })
-            }
+			if (!user?.is_admin) {
+				return res.status(200).json({ error: 'Недостаточно прав' })
+			}
 
-            const { status_4_10, status_2_3, status_1 } = req.body
+			const { status_4_10, status_2_3, status_1 } = req.body
 
-            // Получаем текущий номер сезона
-            const { data: lastSeason } = await supabase
-                .from('seasons')
-                .select('season_number')
-                .order('season_number', { ascending: false })
-                .limit(1)
-                .maybeSingle()
+			// Получаем номер сезона
+			const { data: lastSeason } = await supabase
+				.from('seasons')
+				.select('season_number')
+				.order('season_number', { ascending: false })
+				.limit(1)
+				.maybeSingle()
 
-            const newSeasonNumber = (lastSeason?.season_number || 0) + 1
+			const newSeasonNumber = (lastSeason?.season_number || 0) + 1
 
-            // Получаем топ-10 по СЕЗОННЫМ медалям
+			// ПОЛУЧАЕМ ТОП-10
 			const { data: topUsers } = await supabase
 				.from('users')
 				.select('id, seasonal_medals')
 				.order('seasonal_medals', { ascending: false })
 				.limit(10)
 
-            // Начисляем статусы и бонусы
-            for (let i = 0; i < topUsers.length; i++) {
-                const user = topUsers[i]
-                const rank = i + 1
-                let statusText, bioBonus, postsBonus
+			// НАЧИСЛЯЕМ СТАТУСЫ
+			for (let i = 0; i < topUsers.length; i++) {
+				const user = topUsers[i]
+				const rank = i + 1
+				let statusText, bioBonus, postsBonus
 
-                if (rank === 1) {
-                    statusText = status_1
-                    bioBonus = 20
-                    postsBonus = 30
-                } else if (rank <= 3) {
-                    statusText = status_2_3
-                    bioBonus = 10
-                    postsBonus = 15
-                } else {
-                    statusText = status_4_10
-                    bioBonus = 0
-                    postsBonus = 0
-                }
+				if (rank === 1) {
+					statusText = status_1 || 'Победитель'
+					bioBonus = 20
+					postsBonus = 30
+				} else if (rank <= 3) {
+					statusText = status_2_3 || 'Призёр'
+					bioBonus = 10
+					postsBonus = 15
+				} else {
+					statusText = status_4_10 || 'Участник'
+					bioBonus = 0
+					postsBonus = 0
+				}
 
-                // Сохраняем статус в историю
-                await supabase
-                    .from('user_statuses')
-                    .insert([{
-                        user_id: user.id,
-                        season_number: newSeasonNumber,
-                        rank: rank,
-                        status_text: statusText,
-                        bio_bonus: bioBonus,
-                        posts_bonus: postsBonus
-                    }])
+				await supabase
+					.from('user_statuses')
+					.insert([{
+						user_id: user.id,
+						season_number: newSeasonNumber,
+						rank: rank,
+						status_text: statusText,
+						bio_bonus: bioBonus,
+						posts_bonus: postsBonus
+					}])
 
-                // Обновляем пользователя
-                await supabase
-                    .from('users')
-                    .update({
-                        status_text: statusText,
-                        status_limit_bio: supabase.rpc('increment', { amount: bioBonus }),
-                        status_limit_posts: supabase.rpc('increment', { amount: postsBonus }),
-                        season_rank: rank,
-                        season_medals: 0,
-                        hide_winner_profile: false
-                    })
-                    .eq('id', user.id)
-            }
+				await supabase
+					.from('users')
+					.update({
+						status_text: statusText,
+						status_limit_bio: supabase.rpc('increment', { amount: bioBonus }),
+						status_limit_posts: supabase.rpc('increment', { amount: postsBonus }),
+						season_rank: rank,
+						hide_winner_profile: false
+					})
+					.eq('id', user.id)
+			}
 
-            // Создаём новый сезон
-            await supabase
-                .from('seasons')
-                .insert([{
-                    season_number: newSeasonNumber,
-                    status_4_10,
-                    status_2_3,
-                    status_1
-                }])
+			// СОЗДАЁМ СЕЗОН
+			await supabase
+				.from('seasons')
+				.insert([{
+					season_number: newSeasonNumber,
+					status_4_10: status_4_10 || 'Участник',
+					status_2_3: status_2_3 || 'Призёр',
+					status_1: status_1 || 'Победитель'
+				}])
 
-            return res.status(200).json({ success: true })
-        }
+			// ===== ОБНУЛЯЕМ ВСЕХ =====
+			// Простой и надёжный способ — берём всех пользователей
+			const { data: allUsers } = await supabase
+				.from('users')
+				.select('id')
+
+			for (const u of allUsers) {
+				await supabase
+					.from('users')
+					.update({ seasonal_medals: 0 })
+					.eq('id', u.id)
+			}
+
+			return res.status(200).json({ success: true })
+		}
 
         return res.status(200).json({ error: 'Unknown action' })
 
     } catch (err) {
         console.error('Top error:', err)
-        return res.status(200).json({ error: 'Internal server error' })
+        return res.status(200).json({ error: err.message })
     }
 }

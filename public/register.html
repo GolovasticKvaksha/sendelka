@@ -14,37 +14,63 @@
 </head>
 <body>
     <div class="container">
-        <h1>📦 Регистрация</h1>
-        <form id="registerForm">
-            <input type="text" id="username" placeholder="Никнейм" minlength="3" required>
-            <input type="password" id="password" placeholder="Пароль" minlength="4" required>
+        <div class="auth-header">
+            <h1>📦 Sendelka</h1>
+            <p>Присоединяйся к нам</p>
+        </div>
+
+        <div class="auth-card">
+            <h2>Регистрация</h2>
             
-            <!-- НОВОЕ ПОЛЕ: РЕФЕРАЛ -->
-            <input type="text" id="referrer" placeholder="Кто пригласил? (необязательно)">
-            <small class="field-note">Если вас кто-то пригласил — введите его ник</small>
-            
-            <button type="submit">Зарегистрироваться</button>
-        </form>
-        <p>Есть аккаунт? <a href="login.html">Войти</a></p>
-        <div id="error" class="error"></div>
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Никнейм</label>
+                    <input type="text" id="username" placeholder="Придумайте никнейм" minlength="3" required>
+                    <small class="field-note">Минимум 3 символа</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Придумайте пароль" minlength="4" required>
+                    <small class="field-note">Минимум 4 символа</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="referrer">Кто пригласил? (необязательно)</label>
+                    <input type="text" id="referrer" placeholder="Никнейм друга">
+                </div>
+
+                <button type="submit" class="auth-btn">Зарегистрироваться</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+            </div>
+
+            <div id="error" class="auth-error"></div>
+        </div>
+
+        <!-- КНОПКА ТЕМЫ -->
+        <div class="theme-toggle">
+            <button id="themeToggle" class="theme-btn">
+                <span class="theme-icon">🌙</span>
+                <span class="theme-text">Тёмная тема</span>
+            </button>
+        </div>
     </div>
 
     <script>
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault()
             
-            const username = document.getElementById('username').value
-            const password = document.getElementById('password').value
-            const referrer = document.getElementById('referrer').value.trim()
-            
-            const res = await fetch('/api/referrals', {
+            const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'register',
-                    username,
-                    password,
-                    referrerUsername: referrer || undefined
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
+                    referrerUsername: document.getElementById('referrer').value.trim() || undefined
                 })
             })
             
@@ -57,6 +83,26 @@
                 document.getElementById('error').textContent = data.error
             }
         }
+
+        function initTheme() {
+            const themeBtn = document.getElementById('themeToggle')
+            const themeIcon = themeBtn.querySelector('.theme-icon')
+            const themeText = themeBtn.querySelector('.theme-text')
+            
+            const isDark = document.documentElement.classList.contains('dark-theme')
+            themeIcon.textContent = isDark ? '☀️' : '🌙'
+            themeText.textContent = isDark ? 'Светлая тема' : 'Тёмная тема'
+            
+            themeBtn.onclick = () => {
+                document.documentElement.classList.toggle('dark-theme')
+                const nowDark = document.documentElement.classList.contains('dark-theme')
+                localStorage.setItem('theme', nowDark ? 'dark' : 'light')
+                themeIcon.textContent = nowDark ? '☀️' : '🌙'
+                themeText.textContent = nowDark ? 'Светлая тема' : 'Тёмная тема'
+            }
+        }
+
+        initTheme()
     </script>
 </body>
 </html>

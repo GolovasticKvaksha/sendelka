@@ -16,12 +16,83 @@
     <div class="container">
         <div class="header">
             <h1>📦 Создать пост</h1>
-            <div class="nav-menu">
-                <a href="lenta.html" class="btn">Лента</a>
-                <a href="profile.html" class="btn">Профиль</a>
-                <a href="search.html" class="btn">Поиск</a>
-                <button id="logoutBtn" class="btn">Выйти</button>
-            </div>
+            <!-- ВЕРХНЯЯ НАВИГАЦИЯ (ДЛЯ ПК) -->
+			<div class="top-nav">
+				<a href="lenta.html" class="btn">Лента</a>
+				<a href="profile.html" class="btn">Профиль</a>
+				<a href="search.html" class="btn">Поиск</a>
+				<a href="top.html" class="btn">Топы</a>
+				<a href="create.html" class="btn">Создать</a>
+			</div>
+
+			<!-- НИЖНЯЯ НАВИГАЦИЯ (ДЛЯ ТЕЛЕФОНА) -->
+			<div class="bottom-nav">
+				<a href="lenta.html" class="nav-item">
+					<span class="nav-icon">📰</span>
+					<span class="nav-label">Лента</span>
+				</a>
+				<a href="profile.html" class="nav-item">
+					<span class="nav-icon">👤</span>
+					<span class="nav-label">Профиль</span>
+				</a>
+				<a href="search.html" class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span class="nav-label">Поиск</span>
+				</a>
+				<a href="top.html" class="nav-item">
+					<span class="nav-icon">🏆</span>
+					<span class="nav-label">Топы</span>
+				</a>
+				<a href="create.html" class="nav-item">
+					<span class="nav-icon">➕</span>
+					<span class="nav-label">Создать</span>
+				</a>
+				
+			</div>
+			<form class="create-form" id="postForm">
+				<div class="create-textarea-wrapper">
+					<textarea 
+						id="content" 
+						class="create-textarea"
+						placeholder="Что у тебя нового?"
+						maxlength="600"
+						required
+					></textarea>
+					<div id="charCounter" class="create-char-counter">
+						<span id="currentChars">0</span>/600
+					</div>
+				</div>
+
+				<!-- БЛОК ДЛЯ ФОТО -->
+				<div id="photoSection" class="create-photo-section">
+					<label class="create-photo-label">📷 Прикрепить фото</label>
+					<input type="url" id="imageUrl" class="create-photo-input" 
+						   placeholder="https://... (jpg, png, gif)">
+					<div id="photoPreview" class="create-photo-preview"></div>
+					
+					<div class="create-photo-tip">
+						<p>🔗 Нужно загрузить фото?</p>
+						<ol class="create-tip-steps">
+							<li>Загрузи на <a href="https://imgbb.com" target="_blank">ImgBB</a></li>
+							<li>Скопируй "Прямую ссылку"</li>
+							<li>Вставь ссылку в поле выше</li>
+						</ol>
+						<div class="create-tip-example">
+							Пример: https://i.ibb.co/xxxxx/photo.jpg
+						</div>
+					</div>
+				</div>
+
+				<div class="create-actions">
+					<button type="submit" class="create-submit-btn" id="submitBtn">
+						Опубликовать
+					</button>
+					<a href="lenta.html" class="create-cancel-btn">Отмена</a>
+				</div>
+			</form>
+
+			<div id="error" class="create-error"></div>
+			<div id="success" class="create-success"></div>
         </div>
 
         <form id="postForm">
