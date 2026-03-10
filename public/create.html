@@ -95,38 +95,6 @@
 			<div id="success" class="create-success"></div>
         </div>
 
-        <form id="postForm">
-            <div class="textarea-wrapper">
-                <textarea 
-                    id="content" 
-                    placeholder="Что хочешь написать? (максимум 600 символов)" 
-                    rows="6" 
-                    required
-                    class="post-input"
-                    maxlength="600"
-                ></textarea>
-				<!-- БЛОК ДЛЯ ФОТО (ТОЛЬКО ДЛЯ АДМИНОВ) -->
-				<div id="photoSection" class="photo-section">
-					<label class="photo-label">📷 Прикрепить фото (только для админов):</label>
-					<input type="url" id="imageUrl" class="photo-input" 
-						   placeholder="https://... (только .jpg, .png, .gif, .webp)">
-						   
-						<div class="photo-tip">
-							<p>🔗 Нужно загрузить фото? Используй <a href="https://imgfy.ru/" target="_blank" rel="noopener noreferrer">imgfy.ru</a>
-						</div>
-							   
-					<div id="photoPreview" class="photo-preview"></div>
-				</div>
-                <div id="charCounter" class="char-counter">
-                    <span id="currentChars">0</span>/600
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Опубликовать</button>
-                <a href="lenta.html" class="btn">Отмена</a>
-            </div>
-        </form>
 
         <div id="error" class="error"></div>
         <div id="success" class="success"></div>
